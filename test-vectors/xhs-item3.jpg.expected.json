@@ -1,0 +1,26 @@
+{
+  "schema": "0.1",
+  "assetId": "3f0c6a2e-8d4b-4c1a-9a3e-2b7f5d9e1c40",
+  "capturedAt": "2026-10-20T15:30:00+02:00",
+  "capturedBy": "EasySave/1.7.0",
+  "metadataDate": "2026-10-20T15:30:00+02:00",
+  "source": {
+    "url": "https://www.xiaohongshu.com/explore/6ad2f7050000000012034042",
+    "platform": "xiaohongshu",
+    "id": "6ad2f7050000000012034042",
+    "itemIndex": 3,
+    "itemCount": 9,
+    "authorId": "5f1a2b3c000000000100abcd",
+    "publishedAt": "2026-10-18T09:12:00+08:00"
+  },
+  "title": "wow～ 好干净的奶白色",
+  "creator": [
+    "示例作者"
+  ],
+  "description": "示例正文 & 特殊字符 <测试> \"引号\"",
+  "subject": [
+    "家居",
+    "奶白色"
+  ],
+  "rating": 4
+}

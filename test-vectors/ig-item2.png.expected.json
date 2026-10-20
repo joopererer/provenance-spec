@@ -1,0 +1,20 @@
+{
+  "schema": "0.1",
+  "assetId": "9b2d4e61-7c3a-4f8e-b1d2-5a6c7e8f9012",
+  "capturedAt": "2026-10-20T16:00:00Z",
+  "capturedBy": "OnlineAlbumPlugin/2.3.0",
+  "metadataDate": "2026-10-21T08:00:00Z",
+  "source": {
+    "url": "https://www.instagram.com/p/Ddl1WWnGyCN/",
+    "platform": "instagram",
+    "id": "Ddl1WWnGyCN",
+    "itemIndex": 2,
+    "itemCount": 6
+  },
+  "creator": [
+    "example.account"
+  ],
+  "subject": [
+    "inspiration"
+  ]
+}

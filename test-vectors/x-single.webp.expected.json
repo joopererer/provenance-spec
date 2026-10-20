@@ -1,0 +1,16 @@
+{
+  "schema": "0.1",
+  "assetId": "c4e5f6a7-b8c9-4d0e-8f1a-2b3c4d5e6f70",
+  "capturedAt": "2026-10-20T17:45:10+02:00",
+  "capturedBy": "EasySave/1.7.0",
+  "metadataDate": "2026-10-20T17:45:10+02:00",
+  "source": {
+    "url": "https://x.com/i/status/2111025862892269612",
+    "platform": "x",
+    "id": "2111025862892269612"
+  },
+  "creator": [
+    "example_user"
+  ],
+  "description": "Single-image tweet"
+}

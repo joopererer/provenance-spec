@@ -1,0 +1,59 @@
+{
+  "note": "短链（xhslink.com、t.co、vm.tiktok.com）需要联网展开，不放入离线用例；实现应先展开再规范化。所有 FAKE 值均为虚构。",
+  "cases": [
+    {
+      "in": "https://www.xiaohongshu.com/discovery/item/6ad2f7050000000012034042?source=yamcha_homepage&xsec_token=ABCDEF123&xsec_source=h5_feed&type=normal",
+      "out": "https://www.xiaohongshu.com/explore/6ad2f7050000000012034042",
+      "platform": "xiaohongshu",
+      "id": "6ad2f7050000000012034042"
+    },
+    {
+      "in": "https://www.xiaohongshu.com/explore/6ad09b08000000000a024c55?app_platform=android&ignoreEngage=true&app_version=9.50.0&share_from_user_hidden=true&xsec_source=app_share&type=video&xsec_token=FAKE&author_share=1&xhsshare=CopyLink&shareRedId=FAKE&apptime=1792365888&share_id=FAKE&share_channel=copy_link&track_code=FAKE",
+      "out": "https://www.xiaohongshu.com/explore/6ad09b08000000000a024c55",
+      "platform": "xiaohongshu",
+      "id": "6ad09b08000000000a024c55"
+    },
+    {
+      "in": "https://www.instagram.com/p/DejQyvMmvVO/?img_index=4&xtok=FAKE",
+      "out": "https://www.instagram.com/p/DejQyvMmvVO/",
+      "platform": "instagram",
+      "id": "DejQyvMmvVO"
+    },
+    {
+      "in": "https://www.instagram.com/reel/DbU8Jo5uP3-/?igsh=FAKE",
+      "out": "https://www.instagram.com/p/DbU8Jo5uP3-/",
+      "platform": "instagram",
+      "id": "DbU8Jo5uP3-"
+    },
+    {
+      "in": "https://x.com/eric_sayompoo/status/2111025862892269612?s=20&t=FAKE",
+      "out": "https://x.com/i/status/2111025862892269612",
+      "platform": "x",
+      "id": "2111025862892269612"
+    },
+    {
+      "in": "https://twitter.com/someone/status/2111657987697971696/photo/1",
+      "out": "https://x.com/i/status/2111657987697971696",
+      "platform": "x",
+      "id": "2111657987697971696"
+    },
+    {
+      "in": "https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz012345/view?usp=sharing",
+      "out": "https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz012345/view",
+      "platform": "gdrive",
+      "id": "1AbCdEfGhIjKlMnOpQrStUvWxYz012345"
+    },
+    {
+      "in": "https://Example.COM/articles/42?utm_source=newsletter&utm_medium=email&page=2#comments",
+      "out": "https://example.com/articles/42?page=2",
+      "platform": "web",
+      "id": null
+    },
+    {
+      "in": "https://example.com/gallery?fbclid=FAKE&gclid=FAKE&si=FAKE",
+      "out": "https://example.com/gallery",
+      "platform": "web",
+      "id": null
+    }
+  ]
+}
