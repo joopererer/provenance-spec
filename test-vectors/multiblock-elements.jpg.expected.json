@@ -1,0 +1,24 @@
+{
+  "schema": "0.1",
+  "assetId": "7d8e9f0a-1b2c-4d3e-9f4a-5b6c7d8e9f01",
+  "capturedAt": "2026-10-21T09:00:00+02:00",
+  "capturedBy": "EasySave/1.7.0",
+  "metadataDate": "2026-10-21T09:00:00+02:00",
+  "source": {
+    "url": "https://www.xiaohongshu.com/explore/6ad466ed000000001e024277",
+    "platform": "xiaohongshu",
+    "id": "6ad466ed000000001e024277",
+    "itemIndex": 1,
+    "itemCount": 2,
+    "publishedAt": "2026-10-20T08:00:00Z"
+  },
+  "title": "子元素写法 & 多块",
+  "creator": [
+    "作者甲",
+    "作者乙"
+  ],
+  "subject": [
+    "标签A"
+  ],
+  "rating": 3
+}

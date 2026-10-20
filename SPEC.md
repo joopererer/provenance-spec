@@ -1,6 +1,6 @@
 # Provenance Metadata Spec（溯源元数据规范）
 
-- 版本：**0.1（草案）**
+- 版本：**0.1.1（草案）**
 - 状态：可实现；0.x 期间允许调整，1.0 起冻结已有字段语义
 - 适用项目：EasySave、File Organizer、OnlineAlbumPlugin、Tessera-system，以及任何希望读写本规范的软件
 
@@ -156,6 +156,22 @@
 - 每次写入更新 `xmp:MetadataDate`。
 - 只改元数据，**不重新编码**画面或音视频。
 - 写入失败不得影响文件本身的保存；记录日志即可。
+
+### 4.7 XMP 解析要求（读取方必须做到）
+
+XMP 是 RDF/XML，同一份数据有多种合法写法，不同软件写出的形式不同。读取方必须同时支持：
+
+1. **属性写法**：`<rdf:Description prov:schema="0.1"/>`（exiftool、Adobe 软件常用）。
+2. **子元素写法**：`<rdf:Description><prov:schema>0.1</prov:schema></rdf:Description>`。
+3. **多个 `rdf:Description` 块**：同一个 XMP 包里可以有多个块（exiftool 常按命名空间分块），所有块的字段合并读取。
+4. **按命名空间 URI 识别字段**，不按前缀；同一 URI 可能使用别的前缀。
+5. XML 实体（`&amp;`、`&lt;`、`&quot;` 等）必须还原。
+
+写入方要求：
+
+1. 在 XML 结构上**原地修改**规范涉及的字段；其他节点、属性、命名空间声明原样保留，不得从数据模型重新生成整个 XMP 包。
+2. 所有长度（JPEG 段长度、PNG 块长度、WebP 块长度）按 **UTF-8 字节数**计算，不是字符数。注意 xpacket 头中的 `\ufeff` 在 UTF-8 中占 3 字节。
+3. WebP 块长度为奇数时，块数据后补 1 个 `0x00` 填充字节（填充不计入块长度）。
 
 ---
 

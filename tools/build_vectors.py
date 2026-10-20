@@ -166,6 +166,54 @@ with open(p, "rb") as f:
 wjson("test-vectors/no-metadata.jpg.expected.json", {"_none": True, "sha256": sha})
 cases.append(("no-metadata.jpg", "无元数据：读取结果为空；去重时使用文件 SHA-256（见 expected 中的 sha256）"))
 
+# Element syntax + multiple rdf:Description blocks + non-standard prefix (exiftool style)
+MB = {
+    "schema": "0.1",
+    "assetId": "7d8e9f0a-1b2c-4d3e-9f4a-5b6c7d8e9f01",
+    "capturedAt": "2026-10-21T09:00:00+02:00",
+    "capturedBy": "EasySave/1.7.0",
+    "metadataDate": "2026-10-21T09:00:00+02:00",
+    "source": {"url": "https://www.xiaohongshu.com/explore/6ad466ed000000001e024277", "platform": "xiaohongshu",
+               "id": "6ad466ed000000001e024277", "itemIndex": 1, "itemCount": 2,
+               "authorId": None, "publishedAt": "2026-10-20T08:00:00Z", "pairId": None},
+    "title": "子元素写法 & 多块",
+    "creator": ["作者甲", "作者乙"],
+    "description": None,
+    "subject": ["标签A"],
+    "rating": 3,
+}
+
+
+def xmp_packet_blocks(r):
+    s = r["source"]
+    e = lambda tag, v: f"<{tag}>{escape(str(v))}</{tag}>"
+    pv = "".join([
+        e("pv:schema", r["schema"]), e("pv:assetId", r["assetId"]), e("pv:capturedAt", r["capturedAt"]),
+        e("pv:capturedBy", r["capturedBy"]), e("pv:sourceUrl", s["url"]), e("pv:platform", s["platform"]),
+        e("pv:sourceId", s["id"]), e("pv:itemIndex", s["itemIndex"]), e("pv:itemCount", s["itemCount"]),
+        e("pv:publishedAt", s["publishedAt"]),
+    ])
+    dc = (f'<dc:title><rdf:Alt><rdf:li xml:lang="x-default">{escape(r["title"])}</rdf:li></rdf:Alt></dc:title>'
+          "<dc:creator><rdf:Seq>" + "".join(f"<rdf:li>{escape(c)}</rdf:li>" for c in r["creator"]) + "</rdf:Seq></dc:creator>"
+          "<dc:subject><rdf:Bag>" + "".join(f"<rdf:li>{escape(t)}</rdf:li>" for t in r["subject"]) + "</rdf:Bag></dc:subject>"
+          f"<dc:source>{escape(s['url'])}</dc:source>")
+    xm = e("xmp:Rating", r["rating"]) + e("xmp:MetadataDate", r["metadataDate"]) + e("xmp:CreatorTool", "SomeOtherTool 1.0")
+    return (
+        '<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>\n'
+        '<x:xmpmeta xmlns:x="adobe:ns:meta/">\n'
+        ' <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">\n'
+        f'  <rdf:Description rdf:about="" xmlns:pv="{NS}">{pv}</rdf:Description>\n'
+        f'  <rdf:Description rdf:about="" xmlns:dc="http://purl.org/dc/elements/1.1/">{dc}</rdf:Description>\n'
+        f'  <rdf:Description rdf:about="" xmlns:xmp="http://ns.adobe.com/xap/1.0/">{xm}</rdf:Description>\n'
+        ' </rdf:RDF>\n</x:xmpmeta>\n<?xpacket end="w"?>'
+    )
+
+
+p = os.path.join(TV, "multiblock-elements.jpg")
+img(5).save(p, "JPEG", quality=92, xmp=xmp_packet_blocks(MB).encode("utf-8"))
+wjson("test-vectors/multiblock-elements.jpg.expected.json", clean(MB))
+cases.append(("multiblock-elements.jpg", "子元素写法 + 三个 rdf:Description 块（exiftool 风格）+ 命名空间前缀为 pv 而不是 prov；另含 xmp:CreatorTool 外来字段，写入后必须保留（SPEC 4.7）"))
+
 # URL normalization
 urls = [
     {"in": "https://www.xiaohongshu.com/discovery/item/6ad2f7050000000012034042?source=yamcha_homepage&xsec_token=ABCDEF123&xsec_source=h5_feed&type=normal",
