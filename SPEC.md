@@ -1,6 +1,6 @@
 # Provenance Metadata Spec（溯源元数据规范）
 
-- 版本：**0.1.1（草案）**
+- 版本：**0.1.2（草案）**
 - 状态：可实现；0.x 期间允许调整，1.0 起冻结已有字段语义
 - 适用项目：EasySave、File Organizer、OnlineAlbumPlugin、Tessera-system，以及任何希望读写本规范的软件
 
@@ -45,18 +45,18 @@
 | 字段 | 类型 | 类别 | 说明 |
 |---|---|---|---|
 | `prov:schema` | 文本 | 系统 | 规范版本，当前为 `"0.1"` |
-| `prov:assetId` | 文本（UUID v4，小写） | 抓取 | 文件的永久身份。首次写入时生成，之后**任何软件都不得修改**，复制文件时一并保留 |
+| `prov:assetId` | 文本（UUID v4，小写） | 抓取 | 文件的永久身份。首次写入时生成，之后**任何软件都不得修改**，复制文件时一并保留。已知同一来源（`platform + sourceId + itemIndex`）的 `assetId` 时复用，未知或无 `sourceId` 时生成新的；读取方不能假设一个资源只有一个 `assetId` |
 | `prov:capturedAt` | 日期 | 抓取 | 首次被收录的时间（下载完成/导入时间） |
 | `prov:capturedBy` | 文本 | 抓取 | 首次写入的软件及版本，如 `EasySave/1.7.0`。用于排查某个版本写错数据 |
 | `xmp:MetadataDate` | 日期 | 系统 | 本条元数据最后一次修改的时间（XMP 标准字段） |
 
-### 3.3 来源字段（文件来自网络时必填前三项）
+### 3.3 来源字段
 
 | 字段 | 类型 | 类别 | 必填 | 说明 |
 |---|---|---|---|---|
-| `prov:sourceUrl` | 文本 | 抓取 | 是 | **规范化后**的来源页面链接（见第 5 节）。不是 CDN 直链 |
 | `prov:platform` | 文本 | 抓取 | 是 | 平台标识，见 3.5 |
-| `prov:sourceId` | 文本 | 抓取 | 是 | 平台内的原生 ID（笔记 ID、shortcode、推文 ID、Drive 文件 ID）。无 ID 的普通网页可省略 |
+| `prov:sourceId` | 文本 | 抓取 | 条件必填 | 平台内的原生 ID（笔记 ID、shortcode、推文 ID、Drive 文件 ID、网盘 fs_id）。无原生 ID 的普通网页（`web`）可省略 |
+| `prov:sourceUrl` | 文本 | 抓取 | 条件必填 | **规范化后**的来源页面链接（见第 5 节）。不是 CDN 直链。无稳定公开页面链接的平台（如私有云盘）可省略 |
 | `prov:itemIndex` | 整数 | 抓取 | 多项来源时必填 | 在来源中的序号，**从 1 开始**。单项来源省略 |
 | `prov:itemCount` | 整数 | 抓取 | 否 | 来源中的总项数 |
 | `prov:authorId` | 文本 | 抓取 | 否 | 作者在平台上的稳定 ID（用户名会改，ID 不会） |
@@ -72,16 +72,27 @@
 | `dc:description` | 用户 | 正文/文案，**最多 2000 字符**，超出截断并以 `…` 结尾 | 备注（部分版本） |
 | `dc:subject` | 用户 | 标签（无序列表） | 标记 |
 | `xmp:Rating` | 用户 | 评分 0–5 | 分级 |
-| `dc:source` | 抓取 | 与 `prov:sourceUrl` 相同，供不认识 `prov` 的软件读取 | — |
+| `dc:source` | 抓取 | 与 `prov:sourceUrl` 相同，供不认识 `prov` 的软件读取（省略 `sourceUrl` 时亦省略） | — |
 | `photoshop:Credit` | 抓取 | 可选。署名行，格式 `作者显示名 / 平台名`，如 `示例作者 / 小红书`。IPTC 的 Credit Line 字段，Google 图片等会显示 | — |
 
 ### 3.5 平台标识 `prov:platform`
 
-小写字符串，已定义值：
+小写字符串，已登记平台：
 
-`xiaohongshu`、`instagram`、`x`、`tiktok`、`youtube`、`gdrive`、`web`（普通网页）、`local`（本地导入、无网络来源）
+| 平台标识 | 平台名称 | `sourceId` 定义 | `sourceUrl` 规则 | 说明 |
+|---|---|---|---|---|
+| `xiaohongshu` | 小红书 | 笔记 ID（如 `6ad2f7050000000012034042`） | 必填（规范化 explore 链接） | 多图使用 `itemIndex` |
+| `instagram` | Instagram | shortcode（如 `Ddl1WWnGyCN`） | 必填（规范化 `/p/` 链接） | 多图使用 `itemIndex` |
+| `x` | X (Twitter) | tweetId（纯数字推文 ID） | 必填（规范化 `/i/status/` 链接） | 多图使用 `itemIndex` |
+| `tiktok` | TikTok | 视频 ID | 必填（规范化链接） | 待 TikTok 支持时补充规范链接格式 |
+| `youtube` | YouTube | 视频 ID | 必填（规范化链接） | 待支持 |
+| `gdrive` | Google Drive | `fileId`（Drive API 资源 ID） | `https://drive.google.com/file/d/{fileId}/view` | 单文件来源省略 `itemIndex` |
+| `baidupan` | 百度网盘 | `fs_id`（64位无符号整数转字符串） | 省略（私有文件无稳定公开链接） | 网盘移动、重命名后 `fs_id` 保持不变；单文件来源省略 `itemIndex` |
+| `onedrive` | Microsoft OneDrive | `{driveId}!{id}`（拼接 `driveId` 与 item `id`） | 省略（私有文件无稳定公开链接） | 个人版与商业版（SharePoint）统一采用 `{driveId}!{id}` 格式，确保跨驱动器和租户全局唯一；单文件来源省略 `itemIndex` |
+| `web` | 普通网页 | 省略（网页无原生 ID） | 必填（规范化页面 URL，见第 5 节） | 仅用于追踪来源页面；不按来源键去重或复用 assetId；网页多图各自分配独立 assetId |
+| `local` | 本地导入 | 省略 | 省略 | 本地导入、无网络来源 |
 
-新增平台直接使用新的小写名称，并在本表中登记。
+新增平台直接使用新的小写名称，并在本表中登记。插件尚未实现稳定接入的平台（例如 115 云盘）暂不登记。
 
 ### 3.6 关于 `itemIndex` / `itemCount`
 
@@ -96,6 +107,7 @@
 - 派生关系（裁剪、转码后的新文件）：**不新增自定义字段**，使用 XMP 标准的 `xmpMM:DerivedFrom`（`stRef:documentID` 填原文件的 `assetId`）。派生文件生成**新的** `assetId`。
 - 说明：`prov:assetId` 不复用 `xmpMM:DocumentID`，因为相机和编辑软件会自行写入、改写 DocumentID（如"另存为"会生成新值），语义与本规范"永久不变"不一致。
 - `prov:topics`：Tessera 主题（0.1 中主题直接用 `dc:subject` 标签表示）。
+- `prov:mediaUrl`：媒体直链。只占用名称，用途说明为"媒体直链，只作为排查线索，不参与去重"，0.1.2 不实现。
 
 ---
 
@@ -191,22 +203,40 @@ XMP 是 RDF/XML，同一份数据有多种合法写法，不同软件写出的�
 | x | `https://x.com/i/status/{tweetId}`（不含用户名，用户名会改） |
 | tiktok | 待 TikTok 支持时补充 |
 | gdrive | `https://drive.google.com/file/d/{fileId}/view` |
+| baidupan | 省略（私有文件无稳定公开链接） |
+| onedrive | 省略（私有文件无稳定公开链接） |
 | web | 方案 + 小写主机名 + 路径 + 去除跟踪参数后的查询串 |
 
 说明：规范化后的小红书链接在未登录或缺少 token 时可能无法直接打开，这是可以接受的：`sourceId` 和链接仍唯一标识内容，用户可以重新搜索或在 App 内打开。
 
 ---
 
-## 6. 去重（判断"是否已有"）
+## 6. 去重与 assetId 复用
 
+### 6.1 assetId 复用规则
+- 写入方在已知同一来源（`prov:platform` + `prov:sourceId` + `prov:itemIndex`）已分配 `assetId` 时（例如本地数据库已有记录），必须复用已有 `assetId`；未知或无 `sourceId` 时生成新的 UUID v4。
+- **读取方不能假设一个资源只有一个 assetId**：不同设备独立采集、不同应用写入、或者历史导入未关联来源记录时，完全可能为同一张图片生成不同的 `assetId`。
+
+### 6.2 去重判定顺序
 按顺序判断，命中即视为同一文件：
 
 1. `prov:assetId` 相同；
-2. `prov:platform` + `prov:sourceId` + `prov:itemIndex` 相同（无 `sourceId` 时用 `sourceUrl`）；
+2. `prov:platform` + `prov:sourceId` + `prov:itemIndex` 相同（**仅限有 `sourceId` 的平台**；无 `sourceId` 时不得按来源键去重，也不得按来源键复用 `assetId`）；
 3. 文件内容 SHA-256 相同（**仅用于没有元数据的文件**：写入元数据会改变文件哈希，所以不能拿已写入元数据的文件和未写入的文件比哈希）；
 4. 可选：感知哈希（如 dHash/pHash）相近，提示"可能重复"由用户确认，不自动合并。
 
-复制得到的同一文件会有相同 `assetId`，这是预期行为：它们是同一个资源的多个副本。
+> **为什么删除"无 sourceId 时用 sourceUrl 作后备去重键"的规则？**  
+> `platform=web` 时 `sourceUrl` 是页面链接。若使用页面链接去重或复用 `assetId`，同一个页面上的多张不同图片因为键完全相同，会被误判为同一个文件，甚至被错误复用同一个 `assetId`；  
+> 网页环境下的 `itemIndex` 依赖 DOM 渲染顺序，容易随网页脚本、动态加载或布局调整而变化，极不稳定，无法作为唯一区分依据；  
+> 图片直链（CDN）经常携带尺寸、签名或时间参数，也无法作为稳定的 `sourceId`。  
+> 因此，没有原生 `sourceId` 的平台（如普通网页 `web`）不进行来源键去重，只依据 `assetId` 和内容哈希判断。**宁可漏判重复（多出一个副本），也绝不能误合并两个不同的文件。**
+
+### 6.3 示例：普通网页多图各自拥有独立 assetId
+用户从同一个文章网页 `https://example.com/blog/travel` 收藏了主图与插图两张不同图片：
+- 图片 A：`platform = "web"`, `sourceUrl = "https://example.com/blog/travel"`, 省略 `sourceId`，生成独立 `assetId = "a1111111-..."`
+- 图片 B：`platform = "web"`, `sourceUrl = "https://example.com/blog/travel"`, 省略 `sourceId`，生成独立 `assetId = "b2222222-..."`
+
+两张图片虽然 `sourceUrl` 相同，但没有 `sourceId`，因此各自拥有独立的 `assetId`，且不按来源键去重，绝不会被误合并为同一个文件。复制得到的同一文件副本则保留相同的 `assetId`。
 
 ---
 

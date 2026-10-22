@@ -1,0 +1,15 @@
+{
+  "schema": "0.1",
+  "assetId": "5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b",
+  "capturedAt": "2026-10-22T14:00:00+08:00",
+  "capturedBy": "OnlineAlbumPlugin/0.2.0",
+  "metadataDate": "2026-10-22T14:00:00+08:00",
+  "source": {
+    "platform": "baidupan",
+    "id": "1092837465019283"
+  },
+  "title": "网盘备份图片",
+  "subject": [
+    "备份"
+  ]
+}

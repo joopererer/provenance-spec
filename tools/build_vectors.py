@@ -28,7 +28,8 @@ def xmp_packet(r, foreign=False):
         f'xmp:MetadataDate="{r["metadataDate"]}"',
     ]
     if s:
-        attrs.append(f'prov:sourceUrl="{escape(s["url"])}"')
+        if s.get("url"):
+            attrs.append(f'prov:sourceUrl="{escape(s["url"])}"')
         attrs.append(f'prov:platform="{s["platform"]}"')
         if s.get("id"):
             attrs.append(f'prov:sourceId="{escape(s["id"])}"')
@@ -36,7 +37,8 @@ def xmp_packet(r, foreign=False):
                      ("publishedAt", "publishedAt"), ("pairId", "pairId")]:
             if s.get(k) is not None:
                 attrs.append(f'prov:{x}="{escape(str(s[k]))}"')
-        attrs.append(f'dc:source="{escape(s["url"])}"')
+        if s.get("url"):
+            attrs.append(f'dc:source="{escape(s["url"])}"')
     if r.get("rating") is not None:
         attrs.append(f'xmp:Rating="{r["rating"]}"')
     if foreign:
@@ -110,6 +112,16 @@ LOCAL = {
     "source": None,
     "title": "旅行照片", "creator": None, "description": None, "subject": ["旅行", "2025"], "rating": 5,
 }
+BAIDU = {
+    "schema": "0.1",
+    "assetId": "5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b",
+    "capturedAt": "2026-10-22T14:00:00+08:00",
+    "capturedBy": "OnlineAlbumPlugin/0.2.0",
+    "metadataDate": "2026-10-22T14:00:00+08:00",
+    "source": {"url": None, "platform": "baidupan", "id": "1092837465019283",
+               "itemIndex": None, "itemCount": None, "authorId": None, "publishedAt": None, "pairId": None},
+    "title": "网盘备份图片", "creator": None, "description": None, "subject": ["备份"], "rating": None,
+}
 
 
 def clean(r):
@@ -128,12 +140,28 @@ def img(seed):
     return im
 
 
+def save_jpeg(im, p, xmp_bytes=None):
+    import io
+    buf = io.BytesIO()
+    im.save(buf, "JPEG", quality=92)
+    data = buf.getvalue()
+    idx = 2
+    if data.startswith(b"\xff\xd8\xff\xe0"):
+        idx = 4 + int.from_bytes(data[4:6], "big")
+    if xmp_bytes:
+        payload = b"http://ns.adobe.com/xap/1.0/\x00" + xmp_bytes
+        app1 = b"\xff\xe1" + (len(payload) + 2).to_bytes(2, "big") + payload
+        data = data[:idx] + app1 + data[idx:]
+    with open(p, "wb") as f:
+        f.write(data)
+
+
 os.makedirs(TV, exist_ok=True)
 cases = []
 
 # JPEG with foreign field (preservation test)
 p = os.path.join(TV, "xhs-item3.jpg")
-img(1).save(p, "JPEG", quality=92, xmp=xmp_packet(XHS, foreign=True).encode("utf-8"))
+save_jpeg(img(1), p, xmp_packet(XHS, foreign=True).encode("utf-8"))
 wjson("test-vectors/xhs-item3.jpg.expected.json", clean(XHS))
 cases.append(("xhs-item3.jpg", "JPEG，多图笔记第 3 张，含特殊字符；另含 photoshop:Headline 外来字段，写入后必须保留"))
 
@@ -210,9 +238,15 @@ def xmp_packet_blocks(r):
 
 
 p = os.path.join(TV, "multiblock-elements.jpg")
-img(5).save(p, "JPEG", quality=92, xmp=xmp_packet_blocks(MB).encode("utf-8"))
+save_jpeg(img(5), p, xmp_packet_blocks(MB).encode("utf-8"))
 wjson("test-vectors/multiblock-elements.jpg.expected.json", clean(MB))
 cases.append(("multiblock-elements.jpg", "子元素写法 + 三个 rdf:Description 块（exiftool 风格）+ 命名空间前缀为 pv 而不是 prov；另含 xmp:CreatorTool 外来字段，写入后必须保留（SPEC 4.7）"))
+
+# Baidu Netdisk (omit sourceUrl, has sourceId)
+p = os.path.join(TV, "baidupan-single.jpg")
+save_jpeg(img(6), p, xmp_packet(BAIDU).encode("utf-8"))
+wjson("test-vectors/baidupan-single.jpg.expected.json", clean(BAIDU))
+cases.append(("baidupan-single.jpg", "JPEG，百度网盘来源，省略 sourceUrl（私有文件无稳定公开链接），仅含 platform 与 sourceId（fs_id）"))
 
 # URL normalization
 urls = [
@@ -255,9 +289,9 @@ schema = {
         "capturedAt": date, "capturedBy": {"type": "string", "minLength": 1}, "metadataDate": date,
         "source": {
             "type": ["object", "null"],
-            "required": ["url", "platform"],
+            "required": ["platform"],
             "properties": {
-                "url": {"type": "string", "format": "uri"},
+                "url": {"anyOf": [{"type": "string", "format": "uri"}, {"type": "null"}]},
                 "platform": {"type": "string", "pattern": "^[a-z0-9_-]+$"},
                 "id": {"type": ["string", "null"]},
                 "itemIndex": {"type": ["integer", "null"], "minimum": 1},
@@ -280,8 +314,3 @@ wjson("schema/provenance.schema.json", schema)
 
 w("examples/example.xmp", xmp_packet(XHS))
 wjson("examples/example.json", clean(XHS))
-
-with open(__file__, encoding="utf-8") as f:
-    src = f.read()
-w("tools/build_vectors.py", src.replace('os.path.join(os.path.dirname(__file__), "..")',
-                                        'os.path.join(os.path.dirname(__file__), "..")'))
