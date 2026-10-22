@@ -1,6 +1,6 @@
 # Provenance Metadata Spec（溯源元数据规范）
 
-- 版本：**0.1.2（草案）**
+- 版本：**0.1.3（草案）**
 - 状态：可实现；0.x 期间允许调整，1.0 起冻结已有字段语义
 - 适用项目：EasySave、File Organizer、OnlineAlbumPlugin、Tessera-system，以及任何希望读写本规范的软件
 
@@ -94,6 +94,8 @@
 
 新增平台直接使用新的小写名称，并在本表中登记。插件尚未实现稳定接入的平台（例如 115 云盘）暂不登记。
 
+**平台 ID 的不透明性**：`prov:sourceId` 一律视为不透明字符串（opaque string），读取方不得解析其内部结构。例如 OneDrive 采用 `{driveId}!{id}` 格式，但 Graph item `id` 本身内部也可能包含 `!` 符号，读取方切勿尝试通过切分字符串来推断 `driveId` 或 `id`。
+
 ### 3.6 关于 `itemIndex` / `itemCount`
 
 保留 `itemIndex` 的理由：
@@ -178,12 +180,14 @@ XMP 是 RDF/XML，同一份数据有多种合法写法，不同软件写出的�
 3. **多个 `rdf:Description` 块**：同一个 XMP 包里可以有多个块（exiftool 常按命名空间分块），所有块的字段合并读取。
 4. **按命名空间 URI 识别字段**，不按前缀；同一 URI 可能使用别的前缀。
 5. XML 实体（`&amp;`、`&lt;`、`&quot;` 等）必须还原。
+6. **JPEG APP1 段识别**：识别 JPEG 中的 XMP 段时，**必须**比较 APP1 段开头的标识字节 `http://ns.adobe.com/xap/1.0/\0`（前 29 字节）。遇到以 `Exif\0\0`（EXIF 数据）或其他标识开头的非 XMP APP1 段，必须直接跳过，**绝不得**作为文本解码（更不得假定首个 APP1 就是 XMP）。（来源：EasySave 实现时因 EXIF 段导致 Live 图封面写入失败）
 
 写入方要求：
 
 1. 在 XML 结构上**原地修改**规范涉及的字段；其他节点、属性、命名空间声明原样保留，不得从数据模型重新生成整个 XMP 包。
 2. 所有长度（JPEG 段长度、PNG 块长度、WebP 块长度）按 **UTF-8 字节数**计算，不是字符数。注意 xpacket 头中的 `\ufeff` 在 UTF-8 中占 3 字节。
 3. WebP 块长度为奇数时，块数据后补 1 个 `0x00` 填充字节（填充不计入块长度）。
+4. 遇到已有的 EXIF 段（`Exif\0\0`）或其他非 XMP 的 APP 段时，必须逐字节原样保留，不得破坏或覆盖；写入 XMP 时应将 XMP APP1 段插入或原地替换已有的 XMP APP1 段。
 
 ---
 
@@ -216,6 +220,7 @@ XMP 是 RDF/XML，同一份数据有多种合法写法，不同软件写出的�
 ### 6.1 assetId 复用规则
 - 写入方在已知同一来源（`prov:platform` + `prov:sourceId` + `prov:itemIndex`）已分配 `assetId` 时（例如本地数据库已有记录），必须复用已有 `assetId`；未知或无 `sourceId` 时生成新的 UUID v4。
 - **读取方不能假设一个资源只有一个 assetId**：不同设备独立采集、不同应用写入、或者历史导入未关联来源记录时，完全可能为同一张图片生成不同的 `assetId`。
+- **多 assetId 的主从归并**：同一来源键对应多个不同 `assetId` 时，索引方（如相册或整理工具）以 `prov:capturedAt` 最早者为主记录，在自己的数据库中记录对应或映射关系，**不得修改文件中的 assetId**。
 
 ### 6.2 去重判定顺序
 按顺序判断，命中即视为同一文件：

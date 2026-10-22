@@ -7,6 +7,7 @@
 - `no-metadata.jpg`：无元数据：读取结果为空；去重时使用文件 SHA-256（见 expected 中的 sha256）
 - `multiblock-elements.jpg`：子元素写法 + 三个 rdf:Description 块（exiftool 风格）+ 命名空间前缀为 pv 而不是 prov；另含 xmp:CreatorTool 外来字段，写入后必须保留（SPEC 4.7）
 - `baidupan-single.jpg`：JPEG，百度网盘来源，省略 sourceUrl（私有文件无稳定公开链接），仅含 platform 与 sourceId（fs_id）
+- `exif-before-xmp.jpg`：JPEG，EXIF APP1 段在 XMP APP1 段之前（含真实 EXIF 二进制数据）；读取方必须跳过 EXIF 段识别 XMP，写入后 EXIF 段必须逐字节保留（SPEC 4.7）
 - `urls.json`：链接规范化用例
 
 每个 `*.expected.json` 是按 SPEC 第 7 节 JSON 表示读出的期望结果（省略缺失字段）。

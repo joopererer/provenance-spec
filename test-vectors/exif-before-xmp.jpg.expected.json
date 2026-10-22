@@ -1,0 +1,26 @@
+{
+  "schema": "0.1",
+  "assetId": "8a9b0c1d-2e3f-4a5b-8c7d-8e9f0a1b2c3d",
+  "capturedAt": "2026-10-22T15:00:00+02:00",
+  "capturedBy": "EasySave/1.7.0",
+  "metadataDate": "2026-10-22T15:00:00+02:00",
+  "source": {
+    "url": "https://www.xiaohongshu.com/explore/6ad511fa0000000021034011",
+    "platform": "xiaohongshu",
+    "id": "6ad511fa0000000021034011",
+    "itemIndex": 1,
+    "itemCount": 1,
+    "publishedAt": "2026-10-22T14:30:00+08:00",
+    "pairId": "6ad511fa0000000021034011#1"
+  },
+  "title": "Live 图封面（含 EXIF）",
+  "creator": [
+    "摄影师"
+  ],
+  "description": "测试 EXIF APP1 段在 XMP APP1 段之前；读取方必须跳过 EXIF 段，写入方必须保留",
+  "subject": [
+    "LivePhoto",
+    "风景"
+  ],
+  "rating": 5
+}

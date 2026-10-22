@@ -122,6 +122,20 @@ BAIDU = {
                "itemIndex": None, "itemCount": None, "authorId": None, "publishedAt": None, "pairId": None},
     "title": "网盘备份图片", "creator": None, "description": None, "subject": ["备份"], "rating": None,
 }
+EXIF_CASE = {
+    "schema": "0.1",
+    "assetId": "8a9b0c1d-2e3f-4a5b-8c7d-8e9f0a1b2c3d",
+    "capturedAt": "2026-10-22T15:00:00+02:00",
+    "capturedBy": "EasySave/1.7.0",
+    "metadataDate": "2026-10-22T15:00:00+02:00",
+    "source": {"url": "https://www.xiaohongshu.com/explore/6ad511fa0000000021034011", "platform": "xiaohongshu",
+               "id": "6ad511fa0000000021034011", "itemIndex": 1, "itemCount": 1,
+               "authorId": None, "publishedAt": "2026-10-22T14:30:00+08:00",
+               "pairId": "6ad511fa0000000021034011#1"},
+    "title": "Live 图封面（含 EXIF）", "creator": ["摄影师"],
+    "description": "测试 EXIF APP1 段在 XMP APP1 段之前；读取方必须跳过 EXIF 段，写入方必须保留",
+    "subject": ["LivePhoto", "风景"], "rating": 5,
+}
 
 
 def clean(r):
@@ -140,7 +154,7 @@ def img(seed):
     return im
 
 
-def save_jpeg(im, p, xmp_bytes=None):
+def save_jpeg(im, p, xmp_bytes=None, exif_bytes=None):
     import io
     buf = io.BytesIO()
     im.save(buf, "JPEG", quality=92)
@@ -148,10 +162,15 @@ def save_jpeg(im, p, xmp_bytes=None):
     idx = 2
     if data.startswith(b"\xff\xd8\xff\xe0"):
         idx = 4 + int.from_bytes(data[4:6], "big")
+    segments = []
+    if exif_bytes:
+        app1_exif = b"\xff\xe1" + (len(exif_bytes) + 2).to_bytes(2, "big") + exif_bytes
+        segments.append(app1_exif)
     if xmp_bytes:
         payload = b"http://ns.adobe.com/xap/1.0/\x00" + xmp_bytes
-        app1 = b"\xff\xe1" + (len(payload) + 2).to_bytes(2, "big") + payload
-        data = data[:idx] + app1 + data[idx:]
+        app1_xmp = b"\xff\xe1" + (len(payload) + 2).to_bytes(2, "big") + payload
+        segments.append(app1_xmp)
+    data = data[:idx] + b"".join(segments) + data[idx:]
     with open(p, "wb") as f:
         f.write(data)
 
@@ -175,7 +194,8 @@ cases.append(("ig-item2.png", "PNG iTXt，用户字段较新（metadataDate 晚�
 
 # WebP
 p = os.path.join(TV, "x-single.webp")
-img(3).save(p, "WEBP", lossless=True, xmp=xmp_packet(X).encode("utf-8"))
+if not os.path.exists(p):
+    img(3).save(p, "WEBP", lossless=True, xmp=xmp_packet(X).encode("utf-8"))
 wjson("test-vectors/x-single.webp.expected.json", clean(X))
 cases.append(("x-single.webp", "WebP XMP 块，单项来源（无 itemIndex）"))
 
@@ -247,6 +267,19 @@ p = os.path.join(TV, "baidupan-single.jpg")
 save_jpeg(img(6), p, xmp_packet(BAIDU).encode("utf-8"))
 wjson("test-vectors/baidupan-single.jpg.expected.json", clean(BAIDU))
 cases.append(("baidupan-single.jpg", "JPEG，百度网盘来源，省略 sourceUrl（私有文件无稳定公开链接），仅含 platform 与 sourceId（fs_id）"))
+
+# JPEG with EXIF APP1 segment before XMP APP1 segment
+p = os.path.join(TV, "exif-before-xmp.jpg")
+im_exif = img(7)
+exif_obj = im_exif.getexif()
+exif_obj[0x010E] = "Live Photo Cover Image"
+exif_obj[0x010F] = "Apple"
+exif_obj[0x0110] = "iPhone 15 Pro"
+exif_obj[0x0131] = "EasySave/1.7.0"
+exif_obj[0x0132] = "2026:10:22 14:30:00"
+save_jpeg(im_exif, p, xmp_bytes=xmp_packet(EXIF_CASE).encode("utf-8"), exif_bytes=exif_obj.tobytes())
+wjson("test-vectors/exif-before-xmp.jpg.expected.json", clean(EXIF_CASE))
+cases.append(("exif-before-xmp.jpg", "JPEG，EXIF APP1 段在 XMP APP1 段之前（含真实 EXIF 二进制数据）；读取方必须跳过 EXIF 段识别 XMP，写入后 EXIF 段必须逐字节保留（SPEC 4.7）"))
 
 # URL normalization
 urls = [

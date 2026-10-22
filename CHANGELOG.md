@@ -1,5 +1,13 @@
 # 变更记录
 
+## 0.1.3（草案）— 2026-10-22
+
+- 4.7 XMP 解析要求补充：识别 JPEG 的 XMP 段必须严格比较 APP1 段开头的标识字节（`"http://ns.adobe.com/xap/1.0/\0"`），遇到 EXIF（`"Exif\0\0"`）等其他 APP1 段必须直接跳过，不得作为文本解码；写入方必须逐字节原样保留 EXIF 等已有非 XMP 段。（来源：EasySave 实现时因 EXIF 段导致 Live 图封面写入失败）
+- 新增测试用例 `exif-before-xmp.jpg`：EXIF APP1 段在 XMP APP1 段之前的 JPEG（含真实的 EXIF 二进制数据）；期望读取结果正常，写入后 EXIF 段逐字节保留。
+- §6 去重与 assetId 归并补充：同一来源键对应多个不同 assetId 时（如多设备独立采集所致），索引方以 `capturedAt` 最早者为主记录，在自己的数据库中记录对应关系，不得修改文件中的 assetId。
+- §3.5 平台登记补充说明：`sourceId` 一律视为不透明字符串，读取方不得解析其内部结构（OneDrive 的 `{driveId}!{id}` 中，`id` 本身也可能含 `!`）。
+- IMPLEMENTATIONS.md：增加“当前使用版本”列；EasySave 状态改为已实现 0.1.1（JPEG/PNG/WebP 嵌入读写、边车读取，视频与边车写入未实现）。
+
 ## 0.1.2（草案）— 2026-10-22
 
 - 平台登记：
