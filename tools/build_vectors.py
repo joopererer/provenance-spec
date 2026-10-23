@@ -206,6 +206,54 @@ VIDEO_MULTI_NEW = {
     "description": "测试存在多个 XMP 块时取最后一个可解析的块",
     "subject": ["多块", "最新"], "rating": 5,
 }
+VIDEO_FAKE = {
+    "schema": "0.1",
+    "assetId": "9f0a1b2c-3d4e-4f5a-8b6c-7d8e9f0a1b2c",
+    "capturedAt": "2026-10-23T00:00:00Z",
+    "capturedBy": "FakeTool/0.0.0",
+    "metadataDate": "2026-10-23T00:00:00Z",
+    "source": {"url": "https://example.com/fake", "platform": "fake", "id": "fake_id",
+               "itemIndex": None, "itemCount": None, "authorId": None, "publishedAt": None, "pairId": None},
+    "title": "伪造的 mdat 内部 XMP", "creator": ["fake_creator"],
+    "description": "位于 mdat 内部，读取方绝不得读取此内容",
+    "subject": ["fake"], "rating": 1,
+}
+VIDEO_NOISE_TOPLEVEL = {
+    "schema": "0.1",
+    "assetId": "1b2c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e",
+    "capturedAt": "2026-10-23T14:00:00+02:00",
+    "capturedBy": "EasySave/1.8.0",
+    "metadataDate": "2026-10-23T14:00:00+02:00",
+    "source": {"url": "https://example.com/videos/web-video-1", "platform": "web", "id": None,
+               "itemIndex": None, "itemCount": None, "authorId": None, "publishedAt": None, "pairId": None},
+    "title": "顶层合法 XMP 块", "creator": ["web_creator"],
+    "description": "顶层合法的 XMP 块；mdat 内虽有合法 XMP 包但读取方绝不读取 mdat",
+    "subject": ["Web", "TopLevel"], "rating": 4,
+}
+VIDEO_INTERRUPTED_OLD = {
+    "schema": "0.1",
+    "assetId": "2c3d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f",
+    "capturedAt": "2026-10-23T09:00:00+02:00",
+    "capturedBy": "FileOrganizer/2.0.0",
+    "metadataDate": "2026-10-23T09:00:00+02:00",
+    "source": {"url": "https://x.com/i/status/2111657987697971696", "platform": "x", "id": "2111657987697971696",
+               "itemIndex": None, "itemCount": None, "authorId": None, "publishedAt": None, "pairId": None},
+    "title": "写入中断前的完整旧 XMP 块", "creator": ["video_artist"],
+    "description": "写入中断前已存在的完整 XMP 块，末尾存在未完成的追加块时应回退读取此块",
+    "subject": ["中断恢复", "旧块有效"], "rating": 3,
+}
+VIDEO_INTERRUPTED_NEW = {
+    "schema": "0.1",
+    "assetId": "3d4e5f6a-7b8c-4d9e-8f0a-2b3c4d5e6f7a",
+    "capturedAt": "2026-10-23T15:00:00+02:00",
+    "capturedBy": "EasySave/1.8.1",
+    "metadataDate": "2026-10-23T15:00:00+02:00",
+    "source": {"url": "https://x.com/i/status/2111657987697971696", "platform": "x", "id": "2111657987697971696",
+               "itemIndex": None, "itemCount": None, "authorId": None, "publishedAt": None, "pairId": None},
+    "title": "未写完的新 XMP 块", "creator": ["video_artist"],
+    "description": "写入中断，只写了一半",
+    "subject": ["未完成"], "rating": 5,
+}
 
 
 def clean(r):
@@ -459,14 +507,77 @@ wjson("test-vectors/mp4-multiple-xmp.mp4.expected.json", clean(VIDEO_MULTI_NEW))
 cases.append(("mp4-multiple-xmp.mp4", "MP4 视频，包含多个顶层 XMP uuid box；读取方取最后一个可解析的 XMP 块（SPEC 4.7）"))
 
 # 10. mp4-mdat-uuid-noise
+fake_xmp = XMP_UUID + xmp_packet(VIDEO_FAKE).encode("utf-8")
 d = bytearray(mp4_base)
 noise_pos = mdat_offset + 100
-d[noise_pos:noise_pos+16] = XMP_UUID
-d[noise_pos+16:noise_pos+32] = b"<fake>noise</fake>"
-d = bytes(d)
+d[noise_pos : noise_pos + len(fake_xmp)] = fake_xmp
+assert len(d) == len(mp4_base)
+top_box = make_uuid_box(XMP_UUID, xmp_packet(VIDEO_NOISE_TOPLEVEL).encode("utf-8"))
+d = bytes(d) + top_box
 wbytes("test-vectors/mp4-mdat-uuid-noise.mp4", d)
-wjson("test-vectors/mp4-mdat-uuid-noise.mp4.expected.json", {"_none": True, "sha256": hashlib.sha256(d).hexdigest()})
-cases.append(("mp4-mdat-uuid-noise.mp4", "MP4 视频，mdat 数据内部包含 XMP UUID 字节序列但顶层无 XMP；读取方只扫描顶层不进入 mdat，不得误读（SPEC 4.1/4.7）"))
+wjson("test-vectors/mp4-mdat-uuid-noise.mp4.expected.json", clean(VIDEO_NOISE_TOPLEVEL))
+cases.append(("mp4-mdat-uuid-noise.mp4", "MP4 视频，mdat 内部包含 XMP UUID 及合法 XMP 包（platform=fake），但文件末尾有顶层 XMP 块（platform=web）；读取方只扫描顶层，返回顶层 XMP 块内容（SPEC 4.1/4.7）"))
+
+# 11. mp4-interrupted-append
+box_old = make_uuid_box(XMP_UUID, xmp_packet(VIDEO_INTERRUPTED_OLD).encode("utf-8"))
+box_new = make_uuid_box(XMP_UUID, xmp_packet(VIDEO_INTERRUPTED_NEW).encode("utf-8"))
+half_new = box_new[:60]
+d = mp4_base + box_old + half_new
+wbytes("test-vectors/mp4-interrupted-append.mp4", d)
+wjson("test-vectors/mp4-interrupted-append.mp4.expected.json", clean(VIDEO_INTERRUPTED_OLD))
+cases.append(("mp4-interrupted-append.mp4", "MP4 视频，含完整旧 XMP 块与末尾只写了一半的新 XMP 块；读取方截断容错取旧 XMP 块，写入方允许截回该块起点后恢复写入（SPEC 4.7）"))
+
+# ---------- Self-check for all MP4 / MOV test vectors ----------
+def verify_box_alignment(filename, is_truncated=False):
+    filepath = os.path.join(TV, filename)
+    with open(filepath, "rb") as f:
+        data = f.read()
+    pos = 0
+    file_len = len(data)
+    truncated_detected = False
+    while pos < file_len:
+        if pos + 8 > file_len:
+            truncated_detected = True
+            break
+        size = int.from_bytes(data[pos:pos+4], "big")
+        typ = data[pos+4:pos+8]
+        hdr_len = 8
+        if size == 1:
+            if pos + 16 > file_len:
+                truncated_detected = True
+                break
+            size = int.from_bytes(data[pos+8:pos+16], "big")
+            hdr_len = 16
+        elif size == 0:
+            size = file_len - pos
+
+        if size < hdr_len or pos + size > file_len:
+            truncated_detected = True
+            break
+        pos += size
+
+    if is_truncated:
+        assert truncated_detected, f"{filename} was expected to be truncated, but all boxes aligned!"
+    else:
+        assert not truncated_detected, f"{filename} had unexpected box truncation at offset {pos}/{file_len}!"
+        assert pos == file_len, f"{filename} box boundaries did not align with file length ({pos} != {file_len})!"
+
+video_checks = [
+    ("mp4-no-xmp.mp4", False),
+    ("mp4-xmp-uuid.mp4", False),
+    ("mov-no-xmp.mov", False),
+    ("mov-xmp-uuid.mov", False),
+    ("mp4-64bit-box.mp4", False),
+    ("mp4-size-zero-mdat.mp4", False),
+    ("mp4-truncated-mdat.mp4", True),
+    ("mp4-truncated-xmp.mp4", True),
+    ("mp4-multiple-xmp.mp4", False),
+    ("mp4-mdat-uuid-noise.mp4", False),
+    ("mp4-interrupted-append.mp4", True),
+]
+
+for fname, is_trunc in video_checks:
+    verify_box_alignment(fname, is_truncated=is_trunc)
 
 # URL normalization
 urls = [
@@ -493,7 +604,7 @@ wjson("test-vectors/urls.json", {"note": "短链（xhslink.com、t.co、vm.tikto
 
 w("test-vectors/README.md", "# 测试用例\n\n" + "\n".join(f"- `{n}`：{d}" for n, d in cases) + "\n- `urls.json`：链接规范化用例\n\n"
   "每个 `*.expected.json` 是按 SPEC 第 7 节 JSON 表示读出的期望结果（省略缺失字段）。\n\n"
-  "一致性要求见 SPEC 第 10 节。测试文件由 `tools/build_vectors.py` 用 ffmpeg + Python 确定性生成；**不要手工修改这些文件**，需要修改时改脚本重新生成并在 CHANGELOG 中说明。\n")
+  "一致性要求见 SPEC 第 10 节。测试文件由 `tools/build_vectors.py` 用 ffmpeg + Python 确定性生成；**仓库中提交的测试文件为权威版本，不同机器的 x264 版本可能导致重新生成的字节不同，不要提交这类差异**。\n")
 
 # ---------- schema ----------
 date = {"type": "string", "pattern": r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2}))?$"}

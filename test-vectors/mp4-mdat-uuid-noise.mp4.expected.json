@@ -1,4 +1,21 @@
 {
-  "_none": true,
-  "sha256": "c8ad640f1dd9a5351e4877fe97870296d00c6be2e025ec4d6186c653976bae04"
+  "schema": "0.1",
+  "assetId": "1b2c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e",
+  "capturedAt": "2026-10-23T14:00:00+02:00",
+  "capturedBy": "EasySave/1.8.0",
+  "metadataDate": "2026-10-23T14:00:00+02:00",
+  "source": {
+    "url": "https://example.com/videos/web-video-1",
+    "platform": "web"
+  },
+  "title": "顶层合法 XMP 块",
+  "creator": [
+    "web_creator"
+  ],
+  "description": "顶层合法的 XMP 块；mdat 内虽有合法 XMP 包但读取方绝不读取 mdat",
+  "subject": [
+    "Web",
+    "TopLevel"
+  ],
+  "rating": 4
 }

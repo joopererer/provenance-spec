@@ -17,9 +17,10 @@
 - `mp4-truncated-mdat.mp4`：MP4 视频，mdat 数据块被截断；读取方视为无 XMP，不得报错（SPEC 4.7）
 - `mp4-truncated-xmp.mp4`：MP4 视频，XMP 块数据被截断且 XML 不完整；读取方视为无 XMP，不得报错（SPEC 4.7）
 - `mp4-multiple-xmp.mp4`：MP4 视频，包含多个顶层 XMP uuid box；读取方取最后一个可解析的 XMP 块（SPEC 4.7）
-- `mp4-mdat-uuid-noise.mp4`：MP4 视频，mdat 数据内部包含 XMP UUID 字节序列但顶层无 XMP；读取方只扫描顶层不进入 mdat，不得误读（SPEC 4.1/4.7）
+- `mp4-mdat-uuid-noise.mp4`：MP4 视频，mdat 内部包含 XMP UUID 及合法 XMP 包（platform=fake），但文件末尾有顶层 XMP 块（platform=web）；读取方只扫描顶层，返回顶层 XMP 块内容（SPEC 4.1/4.7）
+- `mp4-interrupted-append.mp4`：MP4 视频，含完整旧 XMP 块与末尾只写了一半的新 XMP 块；读取方截断容错取旧 XMP 块，写入方允许截回该块起点后恢复写入（SPEC 4.7）
 - `urls.json`：链接规范化用例
 
 每个 `*.expected.json` 是按 SPEC 第 7 节 JSON 表示读出的期望结果（省略缺失字段）。
 
-一致性要求见 SPEC 第 10 节。测试文件由 `tools/build_vectors.py` 用 ffmpeg + Python 确定性生成；**不要手工修改这些文件**，需要修改时改脚本重新生成并在 CHANGELOG 中说明。
+一致性要求见 SPEC 第 10 节。测试文件由 `tools/build_vectors.py` 用 ffmpeg + Python 确定性生成；**仓库中提交的测试文件为权威版本，不同机器的 x264 版本可能导致重新生成的字节不同，不要提交这类差异**。

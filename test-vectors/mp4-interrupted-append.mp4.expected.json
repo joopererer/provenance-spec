@@ -1,0 +1,22 @@
+{
+  "schema": "0.1",
+  "assetId": "2c3d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f",
+  "capturedAt": "2026-10-23T09:00:00+02:00",
+  "capturedBy": "FileOrganizer/2.0.0",
+  "metadataDate": "2026-10-23T09:00:00+02:00",
+  "source": {
+    "url": "https://x.com/i/status/2111657987697971696",
+    "platform": "x",
+    "id": "2111657987697971696"
+  },
+  "title": "写入中断前的完整旧 XMP 块",
+  "creator": [
+    "video_artist"
+  ],
+  "description": "写入中断前已存在的完整 XMP 块，末尾存在未完成的追加块时应回退读取此块",
+  "subject": [
+    "中断恢复",
+    "旧块有效"
+  ],
+  "rating": 3
+}
