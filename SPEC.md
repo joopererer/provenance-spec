@@ -1,6 +1,6 @@
 # Provenance Metadata Spec（溯源元数据规范）
 
-- 版本：**0.1.3（草案）**
+- 版本：**0.1.4（草案）**
 - 状态：可实现；0.x 期间允许调整，1.0 起冻结已有字段语义
 - 适用项目：EasySave、File Organizer、OnlineAlbumPlugin、Tessera-system，以及任何希望读写本规范的软件
 
@@ -122,7 +122,7 @@
 | JPEG | APP1 段中的 XMP 包（`http://ns.adobe.com/xap/1.0/\0` 头）。单段上限 64KB，因此 XMP 包必须 **< 60KB**（`dc:description` 截断规则保证这一点）。可选：同时把 `dc:title` 写进 EXIF `ImageDescription`，方便只读 EXIF 的软件 |
 | PNG | `iTXt` 块，关键字 `XML:com.adobe.xmp`，不压缩 |
 | WebP | RIFF `XMP ` 块（需要 `VP8X` 扩展头并置 XMP 标志位） |
-| MP4 / MOV | XMP `uuid` box（UUID `BE7ACFCB-97A9-42E8-9C71-999491E3AFAC`）；实现不了时使用边车文件 |
+| MP4 / MOV | 顶层 `uuid` box（UUID `BE7ACFCB-97A9-42E8-9C71-999491E3AFAC`），16 字节 UUID 之后直接是 XMP 包，没有额外头部。只扫描顶层，不进入 `mdat`。不支持 QuickTime 的 `moov/udta/XMP_`；实现不了时使用边车文件 |
 | GIF、HEIC、AVIF、RAW、其他 | 边车文件 |
 
 ### 4.2 边车文件
@@ -141,7 +141,7 @@
 | 用户自己的原有文件（导入、整理） | 边车（不改动用户原文件），可在设置中改为嵌入 |
 | 格式不支持嵌入 | 边车 |
 | 云盘上的文件（不下载） | 不修改文件，使用云盘自带的文件属性（如 Drive `appProperties`）存同样的字段 |
-| 文件含 C2PA 内容凭证（JPEG 的 APP11 JUMBF 段、PNG 的 `caBX` 块等） | **必须用边车**。向已签名文件嵌入 XMP 会使签名校验失败，破坏其内容凭证 |
+| 文件含 C2PA 内容凭证（JPEG 的 APP11 JUMBF 段、PNG 的 `caBX` 块、MP4 的顶层 C2PA `uuid` box 等） | **必须用边车**。MP4 的 C2PA 存放在顶层 `uuid` box（UUID `D8FEC3D6-1B0E-483C-9297-5828877EC481`），检测到时禁止嵌入，改用边车文件。向已签名文件嵌入 XMP 会破坏其内容凭证与哈希校验 |
 
 ### 4.4 读取与合并
 
@@ -181,6 +181,12 @@ XMP 是 RDF/XML，同一份数据有多种合法写法，不同软件写出的�
 4. **按命名空间 URI 识别字段**，不按前缀；同一 URI 可能使用别的前缀。
 5. XML 实体（`&amp;`、`&lt;`、`&quot;` 等）必须还原。
 6. **JPEG APP1 段识别**：识别 JPEG 中的 XMP 段时，**必须**比较 APP1 段开头的标识字节 `http://ns.adobe.com/xap/1.0/\0`（前 29 字节）。遇到以 `Exif\0\0`（EXIF 数据）或其他标识开头的非 XMP APP1 段，必须直接跳过，**绝不得**作为文本解码（更不得假定首个 APP1 就是 XMP）。（来源：EasySave 实现时因 EXIF 段导致 Live 图封面写入失败）
+7. **MP4 / MOV 读取规则**：
+   - MP4/MOV 使用顶层 `uuid` box（UUID `BE7ACFCB-97A9-42E8-9C71-999491E3AFAC`），16 字节 UUID 之后直接是 XMP 包，没有额外头部。
+   - 读取方**只扫描顶层** box，依据 box 头部的大小跳跃遍历，支持 4 字节 32 位长度与 8 字节 64 位长度（`size == 1` 时的 `largesize`）。**绝对不进入 `mdat`** 等媒体数据块。
+   - 不支持 QuickTime 的 `moov/udta/XMP_`。
+   - **多块处理**：有多个 XMP 块时取**最后一个可解析的**。
+   - **容错处理**：文件被截断或 XML 不完整时视为没有 XMP，**不得报错**。
 
 写入方要求：
 
@@ -188,6 +194,11 @@ XMP 是 RDF/XML，同一份数据有多种合法写法，不同软件写出的�
 2. 所有长度（JPEG 段长度、PNG 块长度、WebP 块长度）按 **UTF-8 字节数**计算，不是字符数。注意 xpacket 头中的 `\ufeff` 在 UTF-8 中占 3 字节。
 3. WebP 块长度为奇数时，块数据后补 1 个 `0x00` 填充字节（填充不计入块长度）。
 4. 遇到已有的 EXIF 段（`Exif\0\0`）或其他非 XMP 的 APP 段时，必须逐字节原样保留，不得破坏或覆盖；写入 XMP 时应将 XMP APP1 段插入或原地替换已有的 XMP APP1 段。
+5. **MP4 / MOV 写入规则**：
+   - **新块追加与旧块标记**：新块追加到文件末尾，旧的 XMP 块只把 box 类型改为 `free`（字节 `66 72 65 65`），其他字节（包含原 16 字节 UUID 和旧 XMP payload）原样不动。
+   - **末尾 0 长度处理**：最后一个顶层块长度为 0 时（size = 0 表示该 box 延伸至文件结尾，常见于流式录制的 `mdat`），需先把长度写明（覆盖其 4 字节 size 字段），原地无法完成时允许拒绝写入。
+   - **支持 64 位长度**：必须支持 64 位长度（处理 `size == 1` 时的 `largesize`）。
+   - **原地追加与失败回滚**：允许原地追加写入；追加失败时必须截回原长度，保证文件不损坏。
 
 ---
 
@@ -304,4 +315,5 @@ ISO 8601，**必须带时区**：`2026-10-20T15:30:00+02:00` 或 `2026-10-20T13:
 3. 对含有其他命名空间字段的输入文件，写入后其他字段原样保留；
 4. 已有 `assetId` 的文件写入后 `assetId` 不变；
 5. 写入不改变图像像素（解码后逐像素比较一致）；
-6. 链接规范化通过 `test-vectors/urls.json` 全部用例。
+6. 对 MP4/MOV：写入后媒体数据逐字节不变，恰好一个 XMP 块位于文件末尾，不重新编码；
+7. 链接规范化通过 `test-vectors/urls.json` 全部用例。

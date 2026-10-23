@@ -1,4 +1,4 @@
-import json, os, hashlib
+import json, os, hashlib, subprocess
 from xml.sax.saxutils import escape
 from PIL import Image, PngImagePlugin
 
@@ -16,6 +16,13 @@ def w(rel, text):
 
 def wjson(rel, obj):
     w(rel, json.dumps(obj, ensure_ascii=False, indent=2) + "\n")
+
+
+def wbytes(rel, data):
+    p = os.path.join(ROOT, rel)
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    with open(p, "wb") as f:
+        f.write(data)
 
 
 def xmp_packet(r, foreign=False):
@@ -135,6 +142,69 @@ EXIF_CASE = {
     "title": "Live 图封面（含 EXIF）", "creator": ["摄影师"],
     "description": "测试 EXIF APP1 段在 XMP APP1 段之前；读取方必须跳过 EXIF 段，写入方必须保留",
     "subject": ["LivePhoto", "风景"], "rating": 5,
+}
+VIDEO_MP4_XMP = {
+    "schema": "0.1",
+    "assetId": "4a5b6c7d-8e9f-4a0b-8c2d-3e4f5a6b7c8d",
+    "capturedAt": "2026-10-23T10:00:00+02:00",
+    "capturedBy": "EasySave/1.8.0",
+    "metadataDate": "2026-10-23T10:00:00+02:00",
+    "source": {"url": "https://www.xiaohongshu.com/explore/6ad09b08000000000a024c55", "platform": "xiaohongshu",
+               "id": "6ad09b08000000000a024c55", "itemIndex": None, "itemCount": None,
+               "authorId": "5f1a2b3c000000000100abcd", "publishedAt": "2026-10-22T18:00:00+08:00", "pairId": None},
+    "title": "MP4 视频测试（含外来字段）", "creator": ["视频作者"],
+    "description": "测试 MP4 顶层 XMP uuid box 与外来命名空间字段保留",
+    "subject": ["视频", "MP4"], "rating": 5,
+}
+VIDEO_MOV_XMP = {
+    "schema": "0.1",
+    "assetId": "5b6c7d8e-9f0a-4b1c-8d3e-4f5a6b7c8d9e",
+    "capturedAt": "2026-10-23T11:00:00+02:00",
+    "capturedBy": "OnlineAlbumPlugin/2.4.0",
+    "metadataDate": "2026-10-23T11:00:00+02:00",
+    "source": {"url": "https://www.instagram.com/p/DbU8Jo5uP3-/", "platform": "instagram",
+               "id": "DbU8Jo5uP3-", "itemIndex": None, "itemCount": None,
+               "authorId": None, "publishedAt": None, "pairId": None},
+    "title": "QuickTime MOV 视频测试（moov 在末尾）", "creator": ["reels_creator"],
+    "description": "测试 MOV 格式下 moov atom 在末尾且含 XMP uuid box 的解析",
+    "subject": ["Reels", "MOV"], "rating": 4,
+}
+VIDEO_64BIT = {
+    "schema": "0.1",
+    "assetId": "6c7d8e9f-0a1b-4c2d-8e4f-5a6b7c8d9e0f",
+    "capturedAt": "2026-10-23T12:00:00+02:00",
+    "capturedBy": "FileOrganizer/2.1.0",
+    "metadataDate": "2026-10-23T12:00:00+02:00",
+    "source": None,
+    "title": "64位 Box 视频测试", "creator": None,
+    "description": "测试支持 64 位长度（largesize）box 的跳过与解析",
+    "subject": ["64bit", "MP4"], "rating": 3,
+}
+VIDEO_MULTI_OLD = {
+    "schema": "0.1",
+    "assetId": "7d8e9f0a-1b2c-4d3e-8f5a-6b7c8d9e0f1a",
+    "capturedAt": "2026-10-23T08:00:00+02:00",
+    "capturedBy": "EasySave/1.7.0",
+    "metadataDate": "2026-10-23T08:00:00+02:00",
+    "source": {"url": "https://x.com/i/status/2111025862892269612", "platform": "x",
+               "id": "2111025862892269612", "itemIndex": None, "itemCount": None,
+               "authorId": None, "publishedAt": None, "pairId": None},
+    "title": "旧版本 XMP 块", "creator": ["old_user"],
+    "description": "旧的 XMP 块，读取方应忽略并取最后一个可解析块",
+    "subject": ["旧版"], "rating": 2,
+}
+VIDEO_MULTI_NEW = {
+    "schema": "0.1",
+    "assetId": "8e9f0a1b-2c3d-4e5f-8a6b-7c8d9e0f1a2b",
+    "capturedAt": "2026-10-23T13:00:00+02:00",
+    "capturedBy": "EasySave/1.8.0",
+    "metadataDate": "2026-10-23T13:00:00+02:00",
+    "source": {"url": "https://x.com/i/status/2111025862892269612", "platform": "x",
+               "id": "2111025862892269612", "itemIndex": None, "itemCount": None,
+               "authorId": None, "publishedAt": None, "pairId": None},
+    "title": "多 XMP 块测试（最新）", "creator": ["new_user"],
+    "description": "测试存在多个 XMP 块时取最后一个可解析的块",
+    "subject": ["多块", "最新"], "rating": 5,
 }
 
 
@@ -281,6 +351,123 @@ save_jpeg(im_exif, p, xmp_bytes=xmp_packet(EXIF_CASE).encode("utf-8"), exif_byte
 wjson("test-vectors/exif-before-xmp.jpg.expected.json", clean(EXIF_CASE))
 cases.append(("exif-before-xmp.jpg", "JPEG，EXIF APP1 段在 XMP APP1 段之前（含真实 EXIF 二进制数据）；读取方必须跳过 EXIF 段识别 XMP，写入后 EXIF 段必须逐字节保留（SPEC 4.7）"))
 
+# ---------- MP4 / MOV test vectors ----------
+XMP_UUID = bytes.fromhex("BE7ACFCB97A942E89C71999491E3AFAC")
+C2PA_UUID = bytes.fromhex("D8FEC3D61B0E483C92975828877EC481")
+
+
+def make_uuid_box(uuid_bytes, payload_bytes, use_64bit=False):
+    if use_64bit:
+        largesize = 16 + 16 + len(payload_bytes)
+        return (1).to_bytes(4, "big") + b"uuid" + largesize.to_bytes(8, "big") + uuid_bytes + payload_bytes
+    else:
+        size = 8 + 16 + len(payload_bytes)
+        return size.to_bytes(4, "big") + b"uuid" + uuid_bytes + payload_bytes
+
+
+def get_base_videos():
+    tmp_mp4 = os.path.join(TV, "_tmp_base.mp4")
+    tmp_mov = os.path.join(TV, "_tmp_base.mov")
+    cmd_mp4 = [
+        "ffmpeg", "-y", "-f", "lavfi", "-i", "testsrc=size=320x240:rate=25:d=3",
+        "-c:v", "libx264", "-b:v", "100k", "-pix_fmt", "yuv420p",
+        "-fflags", "+bitexact", "-flags:v", "+bitexact",
+        "-movflags", "+faststart", tmp_mp4
+    ]
+    subprocess.run(cmd_mp4, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+    with open(tmp_mp4, "rb") as f:
+        mp4_raw = f.read()
+
+    cmd_mov = [
+        "ffmpeg", "-y", "-f", "lavfi", "-i", "testsrc=size=320x240:rate=25:d=3",
+        "-c:v", "libx264", "-b:v", "100k", "-pix_fmt", "yuv420p",
+        "-fflags", "+bitexact", "-flags:v", "+bitexact",
+        "-f", "mov", tmp_mov
+    ]
+    subprocess.run(cmd_mov, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+    with open(tmp_mov, "rb") as f:
+        mov_raw = f.read()
+
+    if os.path.exists(tmp_mp4):
+        os.remove(tmp_mp4)
+    if os.path.exists(tmp_mov):
+        os.remove(tmp_mov)
+
+    return mp4_raw, mov_raw
+
+
+mp4_base, mov_base = get_base_videos()
+
+# 1. mp4-no-xmp
+wbytes("test-vectors/mp4-no-xmp.mp4", mp4_base)
+wjson("test-vectors/mp4-no-xmp.mp4.expected.json", {"_none": True, "sha256": hashlib.sha256(mp4_base).hexdigest()})
+cases.append(("mp4-no-xmp.mp4", "MP4 视频，无 XMP 元数据；读取结果为空，去重时使用文件 SHA-256"))
+
+# 2. mp4-xmp-uuid (with foreign namespace field)
+xmp_bytes = xmp_packet(VIDEO_MP4_XMP, foreign=True).encode("utf-8")
+d = mp4_base + make_uuid_box(XMP_UUID, xmp_bytes)
+wbytes("test-vectors/mp4-xmp-uuid.mp4", d)
+wjson("test-vectors/mp4-xmp-uuid.mp4.expected.json", clean(VIDEO_MP4_XMP))
+cases.append(("mp4-xmp-uuid.mp4", "MP4 视频，顶层 XMP uuid box，含 photoshop:Headline 外来字段（写入后必须保留，SPEC 4.1/4.7）"))
+
+# 3. mov-no-xmp (contains wide atom)
+wbytes("test-vectors/mov-no-xmp.mov", mov_base)
+wjson("test-vectors/mov-no-xmp.mov.expected.json", {"_none": True, "sha256": hashlib.sha256(mov_base).hexdigest()})
+cases.append(("mov-no-xmp.mov", "QuickTime MOV 视频，含 wide atom，无 XMP 元数据"))
+
+# 4. mov-xmp-uuid (moov atom at end)
+xmp_bytes = xmp_packet(VIDEO_MOV_XMP).encode("utf-8")
+d = mov_base + make_uuid_box(XMP_UUID, xmp_bytes)
+wbytes("test-vectors/mov-xmp-uuid.mov", d)
+wjson("test-vectors/mov-xmp-uuid.mov.expected.json", clean(VIDEO_MOV_XMP))
+cases.append(("mov-xmp-uuid.mov", "QuickTime MOV 视频，moov atom 在末尾，末尾追加顶层 XMP uuid box（SPEC 4.1/4.7）"))
+
+# 5. mp4-64bit-box
+free_64 = (1).to_bytes(4, "big") + b"free" + (24).to_bytes(8, "big") + (b"\x00" * 8)
+xmp_bytes = xmp_packet(VIDEO_64BIT).encode("utf-8")
+d = mp4_base + free_64 + make_uuid_box(XMP_UUID, xmp_bytes, use_64bit=True)
+wbytes("test-vectors/mp4-64bit-box.mp4", d)
+wjson("test-vectors/mp4-64bit-box.mp4.expected.json", clean(VIDEO_64BIT))
+cases.append(("mp4-64bit-box.mp4", "MP4 视频，含 64 位长度 box（largesize，size=1），包含 64 位 free box 与 64 位 XMP uuid box（SPEC 4.7）"))
+
+# 6. mp4-size-zero-mdat
+mdat_offset = mp4_base.find(b"mdat") - 4
+d = mp4_base[:mdat_offset] + b"\x00\x00\x00\x00" + mp4_base[mdat_offset+4:]
+wbytes("test-vectors/mp4-size-zero-mdat.mp4", d)
+wjson("test-vectors/mp4-size-zero-mdat.mp4.expected.json", {"_none": True, "sha256": hashlib.sha256(d).hexdigest()})
+cases.append(("mp4-size-zero-mdat.mp4", "MP4 视频，最后一个顶层 box 为 size=0 的 mdat（延伸至文件末尾）；写入方写入前必须先写明其实际长度（SPEC 4.7）"))
+
+# 7. mp4-truncated-mdat
+d = mp4_base[:mdat_offset + 500]
+wbytes("test-vectors/mp4-truncated-mdat.mp4", d)
+wjson("test-vectors/mp4-truncated-mdat.mp4.expected.json", {"_none": True, "sha256": hashlib.sha256(d).hexdigest()})
+cases.append(("mp4-truncated-mdat.mp4", "MP4 视频，mdat 数据块被截断；读取方视为无 XMP，不得报错（SPEC 4.7）"))
+
+# 8. mp4-truncated-xmp
+full_xmp_box = make_uuid_box(XMP_UUID, xmp_packet(VIDEO_MP4_XMP).encode("utf-8"))
+d = mp4_base + full_xmp_box[:60]
+wbytes("test-vectors/mp4-truncated-xmp.mp4", d)
+wjson("test-vectors/mp4-truncated-xmp.mp4.expected.json", {"_none": True, "sha256": hashlib.sha256(d).hexdigest()})
+cases.append(("mp4-truncated-xmp.mp4", "MP4 视频，XMP 块数据被截断且 XML 不完整；读取方视为无 XMP，不得报错（SPEC 4.7）"))
+
+# 9. mp4-multiple-xmp
+box_old = make_uuid_box(XMP_UUID, xmp_packet(VIDEO_MULTI_OLD).encode("utf-8"))
+box_new = make_uuid_box(XMP_UUID, xmp_packet(VIDEO_MULTI_NEW).encode("utf-8"))
+d = mp4_base + box_old + box_new
+wbytes("test-vectors/mp4-multiple-xmp.mp4", d)
+wjson("test-vectors/mp4-multiple-xmp.mp4.expected.json", clean(VIDEO_MULTI_NEW))
+cases.append(("mp4-multiple-xmp.mp4", "MP4 视频，包含多个顶层 XMP uuid box；读取方取最后一个可解析的 XMP 块（SPEC 4.7）"))
+
+# 10. mp4-mdat-uuid-noise
+d = bytearray(mp4_base)
+noise_pos = mdat_offset + 100
+d[noise_pos:noise_pos+16] = XMP_UUID
+d[noise_pos+16:noise_pos+32] = b"<fake>noise</fake>"
+d = bytes(d)
+wbytes("test-vectors/mp4-mdat-uuid-noise.mp4", d)
+wjson("test-vectors/mp4-mdat-uuid-noise.mp4.expected.json", {"_none": True, "sha256": hashlib.sha256(d).hexdigest()})
+cases.append(("mp4-mdat-uuid-noise.mp4", "MP4 视频，mdat 数据内部包含 XMP UUID 字节序列但顶层无 XMP；读取方只扫描顶层不进入 mdat，不得误读（SPEC 4.1/4.7）"))
+
 # URL normalization
 urls = [
     {"in": "https://www.xiaohongshu.com/discovery/item/6ad2f7050000000012034042?source=yamcha_homepage&xsec_token=ABCDEF123&xsec_source=h5_feed&type=normal",
@@ -306,7 +493,7 @@ wjson("test-vectors/urls.json", {"note": "短链（xhslink.com、t.co、vm.tikto
 
 w("test-vectors/README.md", "# 测试用例\n\n" + "\n".join(f"- `{n}`：{d}" for n, d in cases) + "\n- `urls.json`：链接规范化用例\n\n"
   "每个 `*.expected.json` 是按 SPEC 第 7 节 JSON 表示读出的期望结果（省略缺失字段）。\n\n"
-  "一致性要求见 SPEC 第 10 节。图片由 `tools/build_vectors.py` 生成；**不要手工修改这些文件**，需要修改时改脚本重新生成并在 CHANGELOG 中说明。\n")
+  "一致性要求见 SPEC 第 10 节。测试文件由 `tools/build_vectors.py` 用 ffmpeg + Python 确定性生成；**不要手工修改这些文件**，需要修改时改脚本重新生成并在 CHANGELOG 中说明。\n")
 
 # ---------- schema ----------
 date = {"type": "string", "pattern": r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2}))?$"}

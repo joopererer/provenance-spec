@@ -1,0 +1,22 @@
+{
+  "schema": "0.1",
+  "assetId": "8e9f0a1b-2c3d-4e5f-8a6b-7c8d9e0f1a2b",
+  "capturedAt": "2026-10-23T13:00:00+02:00",
+  "capturedBy": "EasySave/1.8.0",
+  "metadataDate": "2026-10-23T13:00:00+02:00",
+  "source": {
+    "url": "https://x.com/i/status/2111025862892269612",
+    "platform": "x",
+    "id": "2111025862892269612"
+  },
+  "title": "多 XMP 块测试（最新）",
+  "creator": [
+    "new_user"
+  ],
+  "description": "测试存在多个 XMP 块时取最后一个可解析的块",
+  "subject": [
+    "多块",
+    "最新"
+  ],
+  "rating": 5
+}

@@ -1,5 +1,32 @@
 # 变更记录
 
+## 0.1.4（草案）— 2026-10-23
+
+- MP4/MOV XMP 存储与解析规范（§4.1, §4.3, §4.7, §10）：
+  - §4.1：MP4/MOV 使用顶层 `uuid` box（UUID `BE7ACFCB-97A9-42E8-9C71-999491E3AFAC`），16 字节 UUID 之后直接是 XMP 包，没有额外头部。读取方只扫描顶层 box，绝对不进入 `mdat`。不支持 QuickTime 的 `moov/udta/XMP_`。
+  - §4.7 读取规则：支持 32 位与 64 位（`size == 1` 时的 `largesize`）长度解析；有多个 XMP 块时取最后一个可解析的；文件被截断或 XML 不完整时视为没有 XMP，不得报错。
+  - §4.7 写入规则：
+    - 新块追加到文件末尾，旧的 XMP 块只把 box 类型改为 `free`，其他字节原样不动；
+    - 最后一个顶层块长度为 0 时（延伸至 EOF），需先把长度写明，原地无法完成时允许拒绝写入；
+    - 必须支持 64 位长度；
+    - 允许原地追加写入：追加失败时必须截回原长度，确保文件不损坏。
+  - §4.3 C2PA 检测：MP4 的 C2PA 存放在顶层 `uuid` box（UUID `D8FEC3D6-1B0E-483C-9297-5828877EC481`），检测到时禁止嵌入，改用边车文件。
+  - §10 一致性要求：对 MP4/MOV，写入后媒体数据逐字节不变，恰好一个 XMP 块位于文件末尾，不重新编码。
+- 测试用例：新增第一批 MP4/MOV 测试用例（由 `tools/build_vectors.py` 用 ffmpeg + Python 确定性生成，配套 `*.expected.json`）：
+  - `mp4-no-xmp.mp4`：无 XMP 的标准 MP4
+  - `mp4-xmp-uuid.mp4`：含顶层 XMP uuid box（含 `photoshop:Headline` 外来命名空间字段，写入后必须保留）
+  - `mov-no-xmp.mov`：含 wide atom 的 QuickTime MOV，无 XMP
+  - `mov-xmp-uuid.mov`：moov atom 在末尾且末尾追加 XMP uuid box 的 MOV 视频
+  - `mp4-64bit-box.mp4`：含 64 位长度（largesize，size=1）box 的 MP4
+  - `mp4-size-zero-mdat.mp4`：末尾 mdat box 长度为 0（延伸至 EOF）的 MP4，写入前需先写明实际长度
+  - `mp4-truncated-mdat.mp4`：mdat 数据被截断的 MP4，读取方不得报错并视为无 XMP
+  - `mp4-truncated-xmp.mp4`：XMP 块数据被截断且 XML 不完整的 MP4，读取方不得报错并视为无 XMP
+  - `mp4-multiple-xmp.mp4`：含有多个顶层 XMP 块的 MP4，读取方取最后一个可解析的 XMP 块
+  - `mp4-mdat-uuid-noise.mp4`：mdat 媒体数据内部包含 XMP UUID 字节序列但顶层无 XMP 的 MP4，验证读取方只扫描顶层不进入 mdat
+- 待补（暂不做）：
+  - 真实签名的 C2PA 视频测试文件（待相关签名工具链完善后补充）
+  - 分片 MP4（Fragmented MP4 / fMP4）测试文件
+
 ## 0.1.3（草案）— 2026-10-22
 
 - 4.7 XMP 解析要求补充：识别 JPEG 的 XMP 段必须严格比较 APP1 段开头的标识字节（`"http://ns.adobe.com/xap/1.0/\0"`），遇到 EXIF（`"Exif\0\0"`）等其他 APP1 段必须直接跳过，不得作为文本解码；写入方必须逐字节原样保留 EXIF 等已有非 XMP 段。（来源：EasySave 实现时因 EXIF 段导致 Live 图封面写入失败）
