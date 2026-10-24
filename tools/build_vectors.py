@@ -678,6 +678,16 @@ urls = [
      "out": "https://x.com/i/status/2111025862892269612", "platform": "x", "id": "2111025862892269612"},
     {"in": "https://twitter.com/someone/status/2111657987697971696/photo/1",
      "out": "https://x.com/i/status/2111657987697971696", "platform": "x", "id": "2111657987697971696"},
+    {"in": "https://www.tiktok.com/@fictional_user/video/7123456789012345678",
+     "out": "https://www.tiktok.com/@/video/7123456789012345678", "platform": "tiktok", "id": "7123456789012345678"},
+    {"in": "https://www.tiktok.com/@fictional_user/photo/7234567890123456789",
+     "out": "https://www.tiktok.com/@/video/7234567890123456789", "platform": "tiktok", "id": "7234567890123456789"},
+    {"in": "https://www.tiktok.com/@fictional_user/video/7123456789012345678?is_from_webapp=1&sender_device=pc&_r=1",
+     "out": "https://www.tiktok.com/@/video/7123456789012345678", "platform": "tiktok", "id": "7123456789012345678"},
+    {"in": "https://www.tiktok.com/v/7345678901234567890.html",
+     "out": "https://www.tiktok.com/@/video/7345678901234567890", "platform": "tiktok", "id": "7345678901234567890"},
+    {"in": "https://www.tiktok.com/share/video/7456789012345678901",
+     "out": "https://www.tiktok.com/@/video/7456789012345678901", "platform": "tiktok", "id": "7456789012345678901"},
     {"in": "https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz012345/view?usp=sharing",
      "out": "https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz012345/view", "platform": "gdrive", "id": "1AbCdEfGhIjKlMnOpQrStUvWxYz012345"},
     {"in": "https://Example.COM/articles/42?utm_source=newsletter&utm_medium=email&page=2#comments",
@@ -685,7 +695,7 @@ urls = [
     {"in": "https://example.com/gallery?fbclid=FAKE&gclid=FAKE&si=FAKE",
      "out": "https://example.com/gallery", "platform": "web", "id": None},
 ]
-wjson("test-vectors/urls.json", {"note": "短链（xhslink.com、t.co、vm.tiktok.com）需要联网展开，不放入离线用例；实现应先展开再规范化。所有 FAKE 值均为虚构。", "cases": urls})
+wjson("test-vectors/urls.json", {"note": "短链（xhslink.com、t.co、vm.tiktok.com、vt.tiktok.com）需要联网展开，不放入离线用例；实现应先展开再规范化。所有 FAKE 值均为虚构。", "cases": urls})
 
 w("test-vectors/README.md", "# 测试用例\n\n" + "\n".join(f"- `{n}`：{d}" for n, d in cases) + "\n- `urls.json`：链接规范化用例\n\n"
   "每个 `*.expected.json` 是按 SPEC 第 7 节 JSON 表示读出的期望结果（省略缺失字段）。\n\n"

@@ -1,5 +1,20 @@
 # 变更记录
 
+## 0.1.7（草案）— 2026-10-24
+
+- TikTok 平台规范支持（基于 EasySave 实测结果，§3.3, §3.5, §5）：
+  - 链接规范化（§5）：
+    - 从任意形式的链接中提取数字 ID：`@{username}/video/{id}`、`@{username}/photo/{id}`、`/v/{id}.html`、`/share/video/{id}` 等；
+    - 统一规范化为 `https://www.tiktok.com/@/video/{id}`。图集帖（photo）同样使用 `/video/`，因 `/photo/` 页面不包含帖子数据，而 `/@/video/{id}` 是 TikTok 服务端跳转时使用的标准形式；
+    - 短链说明：`vm.tiktok.com`、`vt.tiktok.com` 短链需先跟随跳转得到完整链接后再规范化（规范只定义完整链接的规范化，短链展开由实现方负责）；
+    - 去除所有查询参数。
+  - 平台字段（§3.3, §3.5）：
+    - `prov:sourceId`：帖子的数字 ID（视频 ID / 图集 ID）；
+    - `prov:authorId`：只使用作者数字 ID（`author.id`），不得使用可修改的用户名（与 X 的规则一致）；
+    - 图集多图使用 `prov:itemIndex`。
+- 测试用例：
+  - `test-vectors/urls.json`：增加 TikTok 链接规范化测试用例（带用户名的视频链接、图集链接、带跟踪参数的链接、`/v/{id}.html`、`/share/video/{id}`，全部使用虚构用户名）。
+
 ## 0.1.6（草案）— 2026-10-24
 
 - 新增 AI 标注字段与标准映射（§2, §3.4, §3.7, §4.4, §4.6, §7, §10）：

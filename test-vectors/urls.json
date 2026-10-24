@@ -1,5 +1,5 @@
 {
-  "note": "短链（xhslink.com、t.co、vm.tiktok.com）需要联网展开，不放入离线用例；实现应先展开再规范化。所有 FAKE 值均为虚构。",
+  "note": "短链（xhslink.com、t.co、vm.tiktok.com、vt.tiktok.com）需要联网展开，不放入离线用例；实现应先展开再规范化。所有 FAKE 值均为虚构。",
   "cases": [
     {
       "in": "https://www.xiaohongshu.com/discovery/item/6ad2f7050000000012034042?source=yamcha_homepage&xsec_token=ABCDEF123&xsec_source=h5_feed&type=normal",
@@ -36,6 +36,36 @@
       "out": "https://x.com/i/status/2111657987697971696",
       "platform": "x",
       "id": "2111657987697971696"
+    },
+    {
+      "in": "https://www.tiktok.com/@fictional_user/video/7123456789012345678",
+      "out": "https://www.tiktok.com/@/video/7123456789012345678",
+      "platform": "tiktok",
+      "id": "7123456789012345678"
+    },
+    {
+      "in": "https://www.tiktok.com/@fictional_user/photo/7234567890123456789",
+      "out": "https://www.tiktok.com/@/video/7234567890123456789",
+      "platform": "tiktok",
+      "id": "7234567890123456789"
+    },
+    {
+      "in": "https://www.tiktok.com/@fictional_user/video/7123456789012345678?is_from_webapp=1&sender_device=pc&_r=1",
+      "out": "https://www.tiktok.com/@/video/7123456789012345678",
+      "platform": "tiktok",
+      "id": "7123456789012345678"
+    },
+    {
+      "in": "https://www.tiktok.com/v/7345678901234567890.html",
+      "out": "https://www.tiktok.com/@/video/7345678901234567890",
+      "platform": "tiktok",
+      "id": "7345678901234567890"
+    },
+    {
+      "in": "https://www.tiktok.com/share/video/7456789012345678901",
+      "out": "https://www.tiktok.com/@/video/7456789012345678901",
+      "platform": "tiktok",
+      "id": "7456789012345678901"
     },
     {
       "in": "https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz012345/view?usp=sharing",

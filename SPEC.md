@@ -1,6 +1,6 @@
 # Provenance Metadata Spec（溯源元数据规范）
 
-- 版本：**0.1.6（草案）**
+- 版本：**0.1.7（草案）**
 - 状态：可实现；0.x 期间允许调整，1.0 起冻结已有字段语义
 - 适用项目：EasySave、File Organizer、OnlineAlbumPlugin、Tessera-system，以及任何希望读写本规范的软件
 
@@ -56,11 +56,11 @@
 | 字段 | 类型 | 类别 | 必填 | 说明 |
 |---|---|---|---|---|
 | `prov:platform` | 文本 | 抓取 | 是 | 平台标识，见 3.5 |
-| `prov:sourceId` | 文本 | 抓取 | 条件必填 | 平台内的原生 ID（笔记 ID、shortcode、推文 ID、Drive 文件 ID、网盘 fs_id）。无原生 ID 的普通网页（`web`）可省略 |
+| `prov:sourceId` | 文本 | 抓取 | 条件必填 | 平台内的原生 ID（笔记 ID、shortcode、推文 ID、TikTok 帖子数字 ID、Drive 文件 ID、网盘 fs_id）。无原生 ID 的普通网页（`web`）可省略 |
 | `prov:sourceUrl` | 文本 | 抓取 | 条件必填 | **规范化后**的来源页面链接（见第 5 节）。不是 CDN 直链。无稳定公开页面链接的平台（如私有云盘）可省略 |
 | `prov:itemIndex` | 整数 | 抓取 | 多项来源时必填 | 在来源中的序号，**从 1 开始**。单项来源省略 |
 | `prov:itemCount` | 整数 | 抓取 | 否 | 来源中的总项数 |
-| `prov:authorId` | 文本 | 抓取 | 否 | 作者在平台上的稳定 ID（用户名会改，ID 不会） |
+| `prov:authorId` | 文本 | 抓取 | 否 | 作者在平台上的稳定 ID（用户名会改，ID 不会。例如 X 的数字 rest_id、TikTok 的 `author.id` 数字 ID，不得使用用户名） |
 | `prov:publishedAt` | 日期 | 抓取 | 否 | 来源内容的发布时间 |
 | `prov:pairId` | 文本 | 抓取 | 否 | 配对标识：Live Photo 的图片和视频写同一个值，格式 `<sourceId>#<itemIndex>` |
 
@@ -86,7 +86,7 @@
 | `xiaohongshu` | 小红书 | 笔记 ID（如 `6ad2f7050000000012034042`） | 必填（规范化 explore 链接） | 多图使用 `itemIndex` |
 | `instagram` | Instagram | shortcode（如 `Ddl1WWnGyCN`） | 必填（规范化 `/p/` 链接） | 多图使用 `itemIndex` |
 | `x` | X (Twitter) | tweetId（纯数字推文 ID） | 必填（规范化 `/i/status/` 链接） | 多图使用 `itemIndex` |
-| `tiktok` | TikTok | 视频 ID | 必填（规范化链接） | 待 TikTok 支持时补充规范链接格式 |
+| `tiktok` | TikTok | 帖子数字 ID（视频 ID / 图集 ID） | 必填（规范化 `/@/video/{id}` 链接） | 图集使用 `itemIndex`；`authorId` 仅使用作者数字 ID（`author.id`），不得使用用户名 |
 | `youtube` | YouTube | 视频 ID | 必填（规范化链接） | 待支持 |
 | `gdrive` | Google Drive | `fileId`（Drive API 资源 ID） | `https://drive.google.com/file/d/{fileId}/view` | 单文件来源省略 `itemIndex` |
 | `baidupan` | 百度网盘 | `fs_id`（64位无符号整数转字符串） | 省略（私有文件无稳定公开链接） | 网盘移动、重命名后 `fs_id` 保持不变；单文件来源省略 `itemIndex` |
@@ -235,13 +235,20 @@ XMP 是 RDF/XML，同一份数据有多种合法写法，不同软件写出的�
 | xiaohongshu | `https://www.xiaohongshu.com/explore/{noteId}` |
 | instagram | `https://www.instagram.com/p/{shortcode}/`（Reels 同样使用 `/p/`） |
 | x | `https://x.com/i/status/{tweetId}`（不含用户名，用户名会改） |
-| tiktok | 待 TikTok 支持时补充 |
+| tiktok | `https://www.tiktok.com/@/video/{id}`（不含用户名；图集帖同样使用 `/video/`） |
 | gdrive | `https://drive.google.com/file/d/{fileId}/view` |
 | baidupan | 省略（私有文件无稳定公开链接） |
 | onedrive | 省略（私有文件无稳定公开链接） |
 | web | 方案 + 小写主机名 + 路径 + 去除跟踪参数后的查询串 |
 
-说明：规范化后的小红书链接在未登录或缺少 token 时可能无法直接打开，这是可以接受的：`sourceId` 和链接仍唯一标识内容，用户可以重新搜索或在 App 内打开。
+各平台规则细节与说明：
+
+- **xiaohongshu**：规范化后的小红书链接在未登录或缺少 token 时可能无法直接打开，这是可以接受的：`sourceId` 和链接仍唯一标识内容，用户可以重新搜索或在 App 内打开。
+- **tiktok**：
+  - 从任意形式的链接中提取数字 ID：`@{username}/video/{id}`、`@{username}/photo/{id}`、`/v/{id}.html`、`/share/video/{id}` 等；
+  - 统一规范化为 `https://www.tiktok.com/@/video/{id}`。图集帖也使用 `/video/`，因为 `/photo/` 页面不包含帖子数据，而 `/@/video/{id}` 是 TikTok 服务端跳转时使用的标准形式；
+  - `vm.tiktok.com`、`vt.tiktok.com` 短链需要先跟随跳转得到完整链接后再规范化（规范只定义完整链接的规范化，短链展开由实现方负责）；
+  - 去除所有查询参数。
 
 ---
 
