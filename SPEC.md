@@ -1,6 +1,6 @@
 # Provenance Metadata Spec（溯源元数据规范）
 
-- 版本：**0.1.5（草案）**
+- 版本：**0.1.6（草案）**
 - 状态：可实现；0.x 期间允许调整，1.0 起冻结已有字段语义
 - 适用项目：EasySave、File Organizer、OnlineAlbumPlugin、Tessera-system，以及任何希望读写本规范的软件
 
@@ -25,6 +25,7 @@
 | `prov` | `https://joopererer.github.io/provenance-spec/ns/` | 本规范自定义字段 |
 | `dc` | `http://purl.org/dc/elements/1.1/` | Dublin Core（标准） |
 | `xmp` | `http://ns.adobe.com/xap/1.0/` | XMP 基础（标准） |
+| `Iptc4xmpExt` | `http://iptc.org/std/Iptc4xmpExt/2008-02-29/` | IPTC 扩展（标准） |
 
 - 命名空间 URI **永久不变**，版本号写在 `prov:schema` 字段里，不写进 URI。
 - 前缀 `prov` 只是约定；解析时必须以 URI 为准，不能以前缀为准。
@@ -74,6 +75,7 @@
 | `xmp:Rating` | 用户 | 评分 0–5 | 分级 |
 | `dc:source` | 抓取 | 与 `prov:sourceUrl` 相同，供不认识 `prov` 的软件读取（省略 `sourceUrl` 时亦省略） | — |
 | `photoshop:Credit` | 抓取 | 可选。署名行，格式 `作者显示名 / 平台名`，如 `示例作者 / 小红书`。IPTC 的 Credit Line 字段，Google 图片等会显示 | — |
+| `Iptc4xmpExt:DigitalSourceType` | 抓取 | 可选。数字源类型 URI。存在 AI 标注时写入 `http://cv.iptc.org/newscodes/digitalsourcetype/compositeWithTrainedAlgorithmicMedia`；文件中已有该字段时不得覆盖（见 3.7） | — |
 
 ### 3.5 平台标识 `prov:platform`
 
@@ -104,7 +106,22 @@
 
 `itemCount` 为可选：只在想发现"这条笔记共 9 张只存了 6 张"时有用，能拿到就写。
 
-### 3.7 预留（0.1 不实现，名称已占用）
+### 3.7 AI 标注与标准字段映射（可选）
+
+为如实记录内容发布平台或作者本人的 AI 生成/辅助标注，本规范定义以下可选抓取字段与标准字段映射：
+
+| 字段 | 类型 | 类别 | 说明 |
+|---|---|---|---|
+| `prov:aiLabel` | 文本 | 抓取 | 平台页面显示的 AI 标注原文，原样保存，不翻译、不改写（例如 `"内容疑似包含 AI 创作信息"`、`"由 AI 创作"` 等） |
+| `prov:aiLabelSource` | 文本 | 抓取 | 标注来源，取值：`platform`（平台识别）\| `author`（作者声明）\| `unknown`（未知/未指明） |
+| `Iptc4xmpExt:DigitalSourceType` | URI（文本） | 抓取 | IPTC 标准数字源类型。存在 AI 标注时写入 `http://cv.iptc.org/newscodes/digitalsourcetype/compositeWithTrainedAlgorithmicMedia`（命名空间 `http://iptc.org/std/Iptc4xmpExt/2008-02-29/`）。**若文件中已有该字段（例如原图自带、相机或生成软件已写入），绝不得覆盖** |
+
+> **重要声明与语义约束**：  
+> 1. **仅转录，不鉴定**：这些字段只用于客观转录平台页面或作者本人的标注声明，**不代表元数据写入方对媒体内容做过任何技术鉴定或真实性背书**。  
+> 2. **无标注 ≠ 无 AI**：媒体文件中没有上述字段，仅代表抓取或导入时未获取到标注，**不等于内容不含 AI 生成或算法辅助成分**。  
+> 3. **抓取类字段合并规则**：属于抓取类字段，遵循**"缺失才补"**原则（合并或多次写入时，已有字段绝不覆盖；文件中已有 `DigitalSourceType` 时亦绝不覆盖）。
+
+### 3.8 预留（0.1 不实现，名称已占用）
 
 - 派生关系（裁剪、转码后的新文件）：**不新增自定义字段**，使用 XMP 标准的 `xmpMM:DerivedFrom`（`stRef:documentID` 填原文件的 `assetId`）。派生文件生成**新的** `assetId`。
 - 说明：`prov:assetId` 不复用 `xmpMM:DocumentID`，因为相机和编辑软件会自行写入、改写 DocumentID（如"另存为"会生成新值），语义与本规范"永久不变"不一致。
@@ -146,7 +163,7 @@
 ### 4.4 读取与合并
 
 1. 读嵌入元数据；2. 读边车文件；3. 两者都有时按字段合并：
-   - 抓取字段：以嵌入为准；
+   - 抓取字段（含来源字段、`prov:aiLabel`、`prov:aiLabelSource`、`Iptc4xmpExt:DigitalSourceType` 等）：属于抓取类字段，以嵌入为准，遵循"缺失才补"原则（已有字段绝不覆盖）；
    - 用户字段：以 `xmp:MetadataDate` 较新的一方为准；
 4. App 数据库与文件冲突时，**以文件为准**。文件被外部软件修改过（如在 Windows 资源管理器里改了标签），App 重新扫描时读入。
 
@@ -165,7 +182,8 @@
 ### 4.6 写入规则
 
 - 读出原有 XMP 包 → 只修改本规范涉及的字段 → 写回。其他命名空间、其他字段**原样保留**。
-- 已有 `prov:assetId` 时**绝不覆盖**；已有抓取字段时不覆盖。
+- 已有 `prov:assetId` 时**绝不覆盖**；已有抓取字段时不覆盖（"缺失才补"）。
+- 文件中已有 `Iptc4xmpExt:DigitalSourceType` 时（例如原图自带）**不得覆盖**。
 - 已有 `dc:subject`、`xmp:Rating`、`dc:title` 等用户字段，除非是用户本次主动修改，否则不覆盖。
 - 每次写入更新 `xmp:MetadataDate`。
 - 只改元数据，**不重新编码**画面或音视频。
@@ -259,7 +277,7 @@ XMP 是 RDF/XML，同一份数据有多种合法写法，不同软件写出的�
 
 ## 7. JSON 表示
 
-用于 API、命令行输出和测试数据。字段名去掉前缀，标准字段使用以下名称：
+用于 API、命令行输出和测试数据。字段名去掉前缀，标准字段与扩展映射使用以下名称：
 
 ```json
 {
@@ -282,11 +300,16 @@ XMP 是 RDF/XML，同一份数据有多种合法写法，不同软件写出的�
   "creator": ["某作者"],
   "description": "正文……",
   "subject": ["家居", "奶白色"],
-  "rating": 4
+  "rating": 4,
+  "aiLabel": "内容疑似包含 AI 创作信息",
+  "aiLabelSource": "platform",
+  "digitalSourceType": "http://cv.iptc.org/newscodes/digitalsourcetype/compositeWithTrainedAlgorithmicMedia"
 }
 ```
 
+- 字段名去掉前缀：`prov:aiLabel` → `aiLabel`，`prov:aiLabelSource` → `aiLabelSource`，`Iptc4xmpExt:DigitalSourceType` → `digitalSourceType`。
 - 缺失字段可以省略或为 `null`，含义相同。
+- 合并规则：`aiLabel`、`aiLabelSource` 与 `digitalSourceType` 属于抓取类字段，遵循**"缺失才补"**原则。
 - 机器可校验的定义见 `schema/provenance.schema.json`。
 
 ---
@@ -317,4 +340,5 @@ ISO 8601，**必须带时区**：`2026-10-20T15:30:00+02:00` 或 `2026-10-20T13:
 4. 已有 `assetId` 的文件写入后 `assetId` 不变；
 5. 写入不改变图像像素（解码后逐像素比较一致）；
 6. 对 MP4/MOV：写入后媒体数据逐字节不变，恰好一个 XMP 块位于文件末尾，不重新编码；
-7. 链接规范化通过 `test-vectors/urls.json` 全部用例。
+7. 链接规范化通过 `test-vectors/urls.json` 全部用例；
+8. 存在 AI 标注时能正确解析并映射 `digitalSourceType`；对文件中已有 `DigitalSourceType` 的输入，写入时绝不覆盖。

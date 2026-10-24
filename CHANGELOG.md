@@ -1,5 +1,18 @@
 # 变更记录
 
+## 0.1.6（草案）— 2026-10-24
+
+- 新增 AI 标注字段与标准映射（§2, §3.4, §3.7, §4.4, §4.6, §7, §10）：
+  - `prov:aiLabel`（文本，抓取类）：平台页面显示的 AI 标注原文，原样保存，不翻译、不改写。
+  - `prov:aiLabelSource`（文本，抓取类）：标注来源，取值 `platform`（平台识别）| `author`（作者声明）| `unknown`。
+  - 标准字段映射：存在 AI 标注时，写入 `Iptc4xmpExt:DigitalSourceType = http://cv.iptc.org/newscodes/digitalsourcetype/compositeWithTrainedAlgorithmicMedia`（命名空间 `http://iptc.org/std/Iptc4xmpExt/2008-02-29/`）。文件中已有 `DigitalSourceType` 时（例如原图自带）不得覆盖。
+  - 规范声明与语义约束：明确注明这些字段只转录平台或作者的标注，不代表写入方对内容做过鉴定；没有标注不等于不含 AI 内容。
+  - 合并规则与 JSON 表示：属于抓取类字段，"缺失才补"；§7 及 `schema/provenance.schema.json` 增加 `aiLabel`、`aiLabelSource`、`digitalSourceType` 字段定义。
+- 测试用例：
+  - 新增 `jpeg-ai-label.jpg`：带平台识别 AI 标注的 JPEG（配套 `*.expected.json`）。
+  - 新增 `mp4-ai-label.mp4`：顶层 XMP uuid box 含作者声明 AI 标注的 MP4 视频（配套 `*.expected.json`）。
+  - 新增 `jpeg-existing-digitalsourcetype.jpg`：原图自带 `DigitalSourceType`（`trainedAlgorithmicMedia`）的 JPEG，验证写入时不覆盖已有值（配套 `*.expected.json`）。
+
 ## 0.1.5（草案）— 2026-10-23
 
 - §4.7 读取规则修订：

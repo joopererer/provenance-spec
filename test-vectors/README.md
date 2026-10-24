@@ -8,6 +8,8 @@
 - `multiblock-elements.jpg`：子元素写法 + 三个 rdf:Description 块（exiftool 风格）+ 命名空间前缀为 pv 而不是 prov；另含 xmp:CreatorTool 外来字段，写入后必须保留（SPEC 4.7）
 - `baidupan-single.jpg`：JPEG，百度网盘来源，省略 sourceUrl（私有文件无稳定公开链接），仅含 platform 与 sourceId（fs_id）
 - `exif-before-xmp.jpg`：JPEG，EXIF APP1 段在 XMP APP1 段之前（含真实 EXIF 二进制数据）；读取方必须跳过 EXIF 段识别 XMP，写入后 EXIF 段必须逐字节保留（SPEC 4.7）
+- `jpeg-ai-label.jpg`：JPEG，带平台识别 AI 标注（prov:aiLabel 与 prov:aiLabelSource=platform），并映射 Iptc4xmpExt:DigitalSourceType（compositeWithTrainedAlgorithmicMedia）
+- `jpeg-existing-digitalsourcetype.jpg`：JPEG，原图已自带 Iptc4xmpExt:DigitalSourceType（trainedAlgorithmicMedia），验证写入带 AI 标注时绝不覆盖原有的 DigitalSourceType
 - `mp4-no-xmp.mp4`：MP4 视频，无 XMP 元数据；读取结果为空，去重时使用文件 SHA-256
 - `mp4-xmp-uuid.mp4`：MP4 视频，顶层 XMP uuid box，含 photoshop:Headline 外来字段（写入后必须保留，SPEC 4.1/4.7）
 - `mov-no-xmp.mov`：QuickTime MOV 视频，含 wide atom，无 XMP 元数据
@@ -19,6 +21,7 @@
 - `mp4-multiple-xmp.mp4`：MP4 视频，包含多个顶层 XMP uuid box；读取方取最后一个可解析的 XMP 块（SPEC 4.7）
 - `mp4-mdat-uuid-noise.mp4`：MP4 视频，mdat 内部包含 XMP UUID 及合法 XMP 包（platform=fake），但文件末尾有顶层 XMP 块（platform=web）；读取方只扫描顶层，返回顶层 XMP 块内容（SPEC 4.1/4.7）
 - `mp4-interrupted-append.mp4`：MP4 视频，含完整旧 XMP 块与末尾只写了一半的新 XMP 块；读取方截断容错取旧 XMP 块，写入方允许截回该块起点后恢复写入（SPEC 4.7）
+- `mp4-ai-label.mp4`：MP4 视频，顶层 XMP uuid box 含作者声明 AI 标注（prov:aiLabel 与 prov:aiLabelSource=author），并映射 Iptc4xmpExt:DigitalSourceType（compositeWithTrainedAlgorithmicMedia）
 - `urls.json`：链接规范化用例
 
 每个 `*.expected.json` 是按 SPEC 第 7 节 JSON 表示读出的期望结果（省略缺失字段）。

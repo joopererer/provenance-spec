@@ -138,6 +138,35 @@
       ],
       "minimum": 0,
       "maximum": 5
+    },
+    "aiLabel": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "aiLabelSource": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "platform",
+        "author",
+        "unknown",
+        null
+      ]
+    },
+    "digitalSourceType": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uri"
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
   "additionalProperties": true

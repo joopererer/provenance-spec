@@ -1,0 +1,29 @@
+{
+  "schema": "0.1",
+  "assetId": "c3d4e5f6-a7b8-4c9d-8e1f-3a4b5c6d7e8f",
+  "capturedAt": "2026-10-24T10:30:00+08:00",
+  "capturedBy": "OnlineAlbumPlugin/2.5.0",
+  "metadataDate": "2026-10-24T10:30:00+08:00",
+  "source": {
+    "url": "https://www.xiaohongshu.com/explore/6ad999990000000044032233",
+    "platform": "xiaohongshu",
+    "id": "6ad999990000000044032233",
+    "itemIndex": 1,
+    "itemCount": 1,
+    "authorId": "5f1a2b3c000000000100abcd",
+    "publishedAt": "2026-10-24T10:00:00+08:00"
+  },
+  "title": "纯算法生成原图（已自带 DigitalSourceType）",
+  "creator": [
+    "AIGC画师"
+  ],
+  "description": "测试原图已自带 DigitalSourceType（trainedAlgorithmicMedia），写入元数据时不得被覆盖为 compositeWithTrainedAlgorithmicMedia",
+  "subject": [
+    "Midjourney",
+    "生成艺术"
+  ],
+  "rating": 5,
+  "aiLabel": "由 AI 生成",
+  "aiLabelSource": "author",
+  "digitalSourceType": "http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia"
+}

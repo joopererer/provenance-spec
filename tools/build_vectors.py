@@ -46,6 +46,12 @@ def xmp_packet(r, foreign=False):
                 attrs.append(f'prov:{x}="{escape(str(s[k]))}"')
         if s.get("url"):
             attrs.append(f'dc:source="{escape(s["url"])}"')
+    if r.get("aiLabel"):
+        attrs.append(f'prov:aiLabel="{escape(r["aiLabel"])}"')
+    if r.get("aiLabelSource"):
+        attrs.append(f'prov:aiLabelSource="{escape(r["aiLabelSource"])}"')
+    if r.get("digitalSourceType"):
+        attrs.append(f'Iptc4xmpExt:DigitalSourceType="{escape(r["digitalSourceType"])}"')
     if r.get("rating") is not None:
         attrs.append(f'xmp:Rating="{r["rating"]}"')
     if foreign:
@@ -61,6 +67,8 @@ def xmp_packet(r, foreign=False):
         body.append("<dc:subject><rdf:Bag>" + "".join(f"<rdf:li>{escape(t)}</rdf:li>" for t in r["subject"]) + "</rdf:Bag></dc:subject>")
     nsdecl = (f'xmlns:prov="{NS}" xmlns:dc="http://purl.org/dc/elements/1.1/" '
               'xmlns:xmp="http://ns.adobe.com/xap/1.0/"')
+    if r.get("digitalSourceType"):
+        nsdecl += ' xmlns:Iptc4xmpExt="http://iptc.org/std/Iptc4xmpExt/2008-02-29/"'
     if foreign:
         nsdecl += ' xmlns:photoshop="http://ns.adobe.com/photoshop/1.0/"'
     a = "\n    ".join(attrs)
@@ -254,6 +262,54 @@ VIDEO_INTERRUPTED_NEW = {
     "description": "写入中断，只写了一半",
     "subject": ["未完成"], "rating": 5,
 }
+JPEG_AI = {
+    "schema": "0.1",
+    "assetId": "a1b2c3d4-e5f6-4a7b-8c9d-1e2f3a4b5c6d",
+    "capturedAt": "2026-10-24T09:00:00+08:00",
+    "capturedBy": "EasySave/1.9.0",
+    "metadataDate": "2026-10-24T09:00:00+08:00",
+    "source": {"url": "https://www.xiaohongshu.com/explore/6ad888880000000033021122", "platform": "xiaohongshu",
+               "id": "6ad888880000000033021122", "itemIndex": 1, "itemCount": 1,
+               "authorId": "5f1a2b3c000000000100abcd", "publishedAt": "2026-10-24T08:30:00+08:00", "pairId": None},
+    "title": "AI 生成概念设计图", "creator": ["概念设计师"],
+    "description": "测试带 AI 标注的 JPEG 元数据与 IPTC DigitalSourceType 映射",
+    "subject": ["AI", "概念设计"], "rating": 5,
+    "aiLabel": "内容疑似包含 AI 创作信息",
+    "aiLabelSource": "platform",
+    "digitalSourceType": "http://cv.iptc.org/newscodes/digitalsourcetype/compositeWithTrainedAlgorithmicMedia",
+}
+JPEG_EXISTING_DST = {
+    "schema": "0.1",
+    "assetId": "c3d4e5f6-a7b8-4c9d-8e1f-3a4b5c6d7e8f",
+    "capturedAt": "2026-10-24T10:30:00+08:00",
+    "capturedBy": "OnlineAlbumPlugin/2.5.0",
+    "metadataDate": "2026-10-24T10:30:00+08:00",
+    "source": {"url": "https://www.xiaohongshu.com/explore/6ad999990000000044032233", "platform": "xiaohongshu",
+               "id": "6ad999990000000044032233", "itemIndex": 1, "itemCount": 1,
+               "authorId": "5f1a2b3c000000000100abcd", "publishedAt": "2026-10-24T10:00:00+08:00", "pairId": None},
+    "title": "纯算法生成原图（已自带 DigitalSourceType）", "creator": ["AIGC画师"],
+    "description": "测试原图已自带 DigitalSourceType（trainedAlgorithmicMedia），写入元数据时不得被覆盖为 compositeWithTrainedAlgorithmicMedia",
+    "subject": ["Midjourney", "生成艺术"], "rating": 5,
+    "aiLabel": "由 AI 生成",
+    "aiLabelSource": "author",
+    "digitalSourceType": "http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia",
+}
+VIDEO_AI = {
+    "schema": "0.1",
+    "assetId": "b2c3d4e5-f6a7-4b8c-9d0e-2f3a4b5c6d7e",
+    "capturedAt": "2026-10-24T10:00:00+02:00",
+    "capturedBy": "EasySave/1.9.0",
+    "metadataDate": "2026-10-24T10:00:00+02:00",
+    "source": {"url": "https://x.com/i/status/2112000000000000000", "platform": "x",
+               "id": "2112000000000000000", "itemIndex": None, "itemCount": None,
+               "authorId": None, "publishedAt": "2026-10-24T09:30:00+02:00", "pairId": None},
+    "title": "AI 辅助生成短视频", "creator": ["ai_animator"],
+    "description": "测试 MP4 顶层 XMP uuid box 中的 AI 标注字段与 IPTC DigitalSourceType 映射",
+    "subject": ["AIGC", "Animation"], "rating": 4,
+    "aiLabel": "作者声明此视频包含 AI 创作内容",
+    "aiLabelSource": "author",
+    "digitalSourceType": "http://cv.iptc.org/newscodes/digitalsourcetype/compositeWithTrainedAlgorithmicMedia",
+}
 
 
 def clean(r):
@@ -399,6 +455,18 @@ save_jpeg(im_exif, p, xmp_bytes=xmp_packet(EXIF_CASE).encode("utf-8"), exif_byte
 wjson("test-vectors/exif-before-xmp.jpg.expected.json", clean(EXIF_CASE))
 cases.append(("exif-before-xmp.jpg", "JPEG，EXIF APP1 段在 XMP APP1 段之前（含真实 EXIF 二进制数据）；读取方必须跳过 EXIF 段识别 XMP，写入后 EXIF 段必须逐字节保留（SPEC 4.7）"))
 
+# JPEG with AI label (platform detected)
+p = os.path.join(TV, "jpeg-ai-label.jpg")
+save_jpeg(img(8), p, xmp_packet(JPEG_AI).encode("utf-8"))
+wjson("test-vectors/jpeg-ai-label.jpg.expected.json", clean(JPEG_AI))
+cases.append(("jpeg-ai-label.jpg", "JPEG，带平台识别 AI 标注（prov:aiLabel 与 prov:aiLabelSource=platform），并映射 Iptc4xmpExt:DigitalSourceType（compositeWithTrainedAlgorithmicMedia）"))
+
+# JPEG with pre-existing DigitalSourceType (must not be overwritten)
+p = os.path.join(TV, "jpeg-existing-digitalsourcetype.jpg")
+save_jpeg(img(9), p, xmp_packet(JPEG_EXISTING_DST).encode("utf-8"))
+wjson("test-vectors/jpeg-existing-digitalsourcetype.jpg.expected.json", clean(JPEG_EXISTING_DST))
+cases.append(("jpeg-existing-digitalsourcetype.jpg", "JPEG，原图已自带 Iptc4xmpExt:DigitalSourceType（trainedAlgorithmicMedia），验证写入带 AI 标注时绝不覆盖原有的 DigitalSourceType"))
+
 # ---------- MP4 / MOV test vectors ----------
 XMP_UUID = bytes.fromhex("BE7ACFCB97A942E89C71999491E3AFAC")
 C2PA_UUID = bytes.fromhex("D8FEC3D61B0E483C92975828877EC481")
@@ -414,6 +482,15 @@ def make_uuid_box(uuid_bytes, payload_bytes, use_64bit=False):
 
 
 def get_base_videos():
+    p_mp4 = os.path.join(TV, "mp4-no-xmp.mp4")
+    p_mov = os.path.join(TV, "mov-no-xmp.mov")
+    if os.path.exists(p_mp4) and os.path.exists(p_mov):
+        with open(p_mp4, "rb") as f:
+            mp4_raw = f.read()
+        with open(p_mov, "rb") as f:
+            mov_raw = f.read()
+        return mp4_raw, mov_raw
+
     tmp_mp4 = os.path.join(TV, "_tmp_base.mp4")
     tmp_mov = os.path.join(TV, "_tmp_base.mov")
     cmd_mp4 = [
@@ -527,6 +604,13 @@ wbytes("test-vectors/mp4-interrupted-append.mp4", d)
 wjson("test-vectors/mp4-interrupted-append.mp4.expected.json", clean(VIDEO_INTERRUPTED_OLD))
 cases.append(("mp4-interrupted-append.mp4", "MP4 视频，含完整旧 XMP 块与末尾只写了一半的新 XMP 块；读取方截断容错取旧 XMP 块，写入方允许截回该块起点后恢复写入（SPEC 4.7）"))
 
+# 12. mp4-ai-label
+xmp_bytes = xmp_packet(VIDEO_AI).encode("utf-8")
+d = mp4_base + make_uuid_box(XMP_UUID, xmp_bytes)
+wbytes("test-vectors/mp4-ai-label.mp4", d)
+wjson("test-vectors/mp4-ai-label.mp4.expected.json", clean(VIDEO_AI))
+cases.append(("mp4-ai-label.mp4", "MP4 视频，顶层 XMP uuid box 含作者声明 AI 标注（prov:aiLabel 与 prov:aiLabelSource=author），并映射 Iptc4xmpExt:DigitalSourceType（compositeWithTrainedAlgorithmicMedia）"))
+
 # ---------- Self-check for all MP4 / MOV test vectors ----------
 def verify_box_alignment(filename, is_truncated=False):
     filepath = os.path.join(TV, filename)
@@ -574,6 +658,7 @@ video_checks = [
     ("mp4-multiple-xmp.mp4", False),
     ("mp4-mdat-uuid-noise.mp4", False),
     ("mp4-interrupted-append.mp4", True),
+    ("mp4-ai-label.mp4", False),
 ]
 
 for fname, is_trunc in video_checks:
@@ -638,6 +723,17 @@ schema = {
         "description": {"type": ["string", "null"], "maxLength": 2000},
         "subject": {"type": ["array", "null"], "items": {"type": "string"}},
         "rating": {"type": ["integer", "null"], "minimum": 0, "maximum": 5},
+        "aiLabel": {"type": ["string", "null"]},
+        "aiLabelSource": {
+            "type": ["string", "null"],
+            "enum": ["platform", "author", "unknown", None],
+        },
+        "digitalSourceType": {
+            "anyOf": [
+                {"type": "string", "format": "uri"},
+                {"type": "null"},
+            ]
+        },
     },
     "additionalProperties": True,
 }

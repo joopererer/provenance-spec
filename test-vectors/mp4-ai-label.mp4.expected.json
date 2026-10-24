@@ -1,0 +1,26 @@
+{
+  "schema": "0.1",
+  "assetId": "b2c3d4e5-f6a7-4b8c-9d0e-2f3a4b5c6d7e",
+  "capturedAt": "2026-10-24T10:00:00+02:00",
+  "capturedBy": "EasySave/1.9.0",
+  "metadataDate": "2026-10-24T10:00:00+02:00",
+  "source": {
+    "url": "https://x.com/i/status/2112000000000000000",
+    "platform": "x",
+    "id": "2112000000000000000",
+    "publishedAt": "2026-10-24T09:30:00+02:00"
+  },
+  "title": "AI 辅助生成短视频",
+  "creator": [
+    "ai_animator"
+  ],
+  "description": "测试 MP4 顶层 XMP uuid box 中的 AI 标注字段与 IPTC DigitalSourceType 映射",
+  "subject": [
+    "AIGC",
+    "Animation"
+  ],
+  "rating": 4,
+  "aiLabel": "作者声明此视频包含 AI 创作内容",
+  "aiLabelSource": "author",
+  "digitalSourceType": "http://cv.iptc.org/newscodes/digitalsourcetype/compositeWithTrainedAlgorithmicMedia"
+}
