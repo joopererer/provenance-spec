@@ -1,5 +1,17 @@
 # 变更记录
 
+## 0.1.8（草案）— 2026-11-07
+
+- 小红书链接规范化（§5）：
+  - `xiaohongshu.com`、`www.xiaohongshu.com`、`rednote.com`、`www.rednote.com` 下的 `/explore/{noteId}`、`/discovery/item/{noteId}`、`/user/profile/{userId}/{noteId}` 统一规范化为 `https://www.xiaohongshu.com/explore/{noteId}`，并使用 `noteId` 作为 `sourceId`。
+  - `noteId` 必须是 24 个 ASCII 小写十六进制字符；canonical URL 不含 query，`originalUrl` 保留用户输入原样。`xhslink.cn`、`xhslink.com` 短链不在规范化阶段展开。
+- 重复 query 参数（§5）：
+  - 对 `originalUrl` 和其他需要保留 query 的规则，重复参数全部保留，维持原顺序和原编码，不合并、去重或重排；当前受影响的现有规则是 `web` 的非跟踪 query 保留行为。
+- 兼容性影响：
+  - 已写入文件中的 rednote 链接，其 canonical URL 可能与本版新规则不同。读取方应同时接受旧值，或先按本版规则重新规范化后再比较。
+- 测试向量：
+  - 新增 `test-vectors/urls-0.1.8.json`，覆盖 rednote 两个域名的三种路径、非法 noteId、原样 `originalUrl` 与重复 query 参数。
+
 ## 0.1.7（草案）— 2026-10-24
 
 - TikTok 平台规范支持（基于 EasySave 实测结果，§3.3, §3.5, §5）：

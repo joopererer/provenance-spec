@@ -23,6 +23,7 @@
 - `mp4-interrupted-append.mp4`：MP4 视频，含完整旧 XMP 块与末尾只写了一半的新 XMP 块；读取方截断容错取旧 XMP 块，写入方允许截回该块起点后恢复写入（SPEC 4.7）
 - `mp4-ai-label.mp4`：MP4 视频，顶层 XMP uuid box 含作者声明 AI 标注（prov:aiLabel 与 prov:aiLabelSource=author），并映射 Iptc4xmpExt:DigitalSourceType（compositeWithTrainedAlgorithmicMedia）
 - `urls.json`：链接规范化用例
+- `urls-0.1.8.json`：0.1.8 链接规范化用例，覆盖 rednote 两个域名的三种路径、非法 noteId、原样 `originalUrl` 与重复 query 参数
 
 每个 `*.expected.json` 是按 SPEC 第 7 节 JSON 表示读出的期望结果（省略缺失字段）。
 

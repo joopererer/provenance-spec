@@ -1,0 +1,80 @@
+{
+  "note": "0.1.8 新增链接规范化向量。短链不在规范化阶段展开；所有 FAKE 值均为虚构。",
+  "cases": [
+    {
+      "in": "https://rednote.com/explore/6ad2f7050000000012034042",
+      "out": "https://www.xiaohongshu.com/explore/6ad2f7050000000012034042",
+      "platform": "xiaohongshu",
+      "id": "6ad2f7050000000012034042"
+    },
+    {
+      "in": "https://rednote.com/discovery/item/6ad2f7050000000012034042",
+      "out": "https://www.xiaohongshu.com/explore/6ad2f7050000000012034042",
+      "platform": "xiaohongshu",
+      "id": "6ad2f7050000000012034042"
+    },
+    {
+      "in": "https://rednote.com/user/profile/5f1a2b3c000000000100abcd/6ad2f7050000000012034042",
+      "out": "https://www.xiaohongshu.com/explore/6ad2f7050000000012034042",
+      "platform": "xiaohongshu",
+      "id": "6ad2f7050000000012034042"
+    },
+    {
+      "in": "https://www.rednote.com/explore/6ad2f7050000000012034042?xsec_token=FAKE_TOKEN&xsec_source=share",
+      "out": "https://www.xiaohongshu.com/explore/6ad2f7050000000012034042",
+      "originalUrl": "https://www.rednote.com/explore/6ad2f7050000000012034042?xsec_token=FAKE_TOKEN&xsec_source=share",
+      "platform": "xiaohongshu",
+      "id": "6ad2f7050000000012034042"
+    },
+    {
+      "in": "https://www.rednote.com/discovery/item/6ad2f7050000000012034042",
+      "out": "https://www.xiaohongshu.com/explore/6ad2f7050000000012034042",
+      "platform": "xiaohongshu",
+      "id": "6ad2f7050000000012034042"
+    },
+    {
+      "in": "https://www.rednote.com/user/profile/5f1a2b3c000000000100abcd/6ad2f7050000000012034042",
+      "out": "https://www.xiaohongshu.com/explore/6ad2f7050000000012034042",
+      "platform": "xiaohongshu",
+      "id": "6ad2f7050000000012034042"
+    },
+    {
+      "in": "https://rednote.com/explore/6ad2f705000000001203404Z",
+      "out": "https://rednote.com/explore/6ad2f705000000001203404Z",
+      "normalized": false,
+      "platform": null,
+      "id": null
+    },
+    {
+      "in": "https://www.rednote.com/user/profile/5f1a2b3c000000000100abcd/6ad2f705000000001203404",
+      "out": "https://www.rednote.com/user/profile/5f1a2b3c000000000100abcd/6ad2f705000000001203404",
+      "normalized": false,
+      "platform": null,
+      "id": null
+    },
+    {
+      "in": "https://example.com/search?a=1&a=2&b=3",
+      "out": "https://example.com/search?a=1&a=2&b=3",
+      "platform": "web",
+      "id": null
+    },
+    {
+      "in": "https://example.com/search?a=1&a=&a=3&b=",
+      "out": "https://example.com/search?a=1&a=&a=3&b=",
+      "platform": "web",
+      "id": null
+    },
+    {
+      "in": "https://example.com/search?q=%2B%20%C3%A9&q=%252B%2520&x=1",
+      "out": "https://example.com/search?q=%2B%20%C3%A9&q=%252B%2520&x=1",
+      "platform": "web",
+      "id": null
+    },
+    {
+      "in": "https://example.com/search?a=1&b=2&a=3&c=&b=4",
+      "out": "https://example.com/search?a=1&b=2&a=3&c=&b=4",
+      "platform": "web",
+      "id": null
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # Provenance Metadata Spec（溯源元数据规范）
 
-- 版本：**0.1.7（草案）**
+- 版本：**0.1.8（草案）**
 - 状态：可实现；0.x 期间允许调整，1.0 起冻结已有字段语义
 - 适用项目：EasySave、File Organizer、OnlineAlbumPlugin、Tessera-system，以及任何希望读写本规范的软件
 
@@ -243,7 +243,17 @@ XMP 是 RDF/XML，同一份数据有多种合法写法，不同软件写出的�
 
 各平台规则细节与说明：
 
-- **xiaohongshu**：规范化后的小红书链接在未登录或缺少 token 时可能无法直接打开，这是可以接受的：`sourceId` 和链接仍唯一标识内容，用户可以重新搜索或在 App 内打开。
+- **查询参数保留**：
+  - 对需要保留 query 的场景（包括 `originalUrl`，以及本规范中保留 query 的平台规则），同名参数必须全部保留，保持原有出现顺序和原有编码；不得合并、去重或重新排序。
+  - 如果某个平台规则明确规定了排序，则该平台规则优先于上述顺序要求。
+  - 当前受影响的现有规则是 `web`：去除列出的跟踪参数后，其余 query 参数（包括重复参数、空值和编码）原样保留。`instagram`、`x`、`tiktok`、`gdrive` 及小红书的固定格式均不保留 query，因此不受重复参数规则影响。
+- **xiaohongshu**：
+  - 适用域名为 `xiaohongshu.com`、`www.xiaohongshu.com`、`rednote.com`、`www.rednote.com`，适用路径为 `/explore/{noteId}`、`/discovery/item/{noteId}`、`/user/profile/{userId}/{noteId}`。
+  - `noteId` 必须匹配 `[0-9a-f]{24}`（恰好 24 个 ASCII 小写十六进制字符）；不匹配时不得按本规则规范化。
+  - 对上述域名和路径，canonical URL 统一为 `https://www.xiaohongshu.com/explore/{noteId}`，`sourceId` 为 `{noteId}`。canonical URL 不包含 query。
+  - `originalUrl` 必须保留用户提供的原样，包括域名、路径、query、`xsec_token` 等参数；不得为了生成 `originalUrl` 替换域名。`prov:sourceUrl` 使用上述 canonical URL。
+  - 短链 `xhslink.cn`、`xhslink.com` 不在规范化阶段展开；实现方必须先展开得到上述完整链接，再按本规则规范化。
+  - 规范化后的小红书链接在未登录或缺少 token 时可能无法直接打开，这是可以接受的：`sourceId` 和链接仍唯一标识内容，用户可以重新搜索或在 App 内打开。
 - **tiktok**：
   - 从任意形式的链接中提取数字 ID：`@{username}/video/{id}`、`@{username}/photo/{id}`、`/v/{id}.html`、`/share/video/{id}` 等；
   - 统一规范化为 `https://www.tiktok.com/@/video/{id}`。图集帖也使用 `/video/`，因为 `/photo/` 页面不包含帖子数据，而 `/@/video/{id}` 是 TikTok 服务端跳转时使用的标准形式；
@@ -347,5 +357,5 @@ ISO 8601，**必须带时区**：`2026-10-20T15:30:00+02:00` 或 `2026-10-20T13:
 4. 已有 `assetId` 的文件写入后 `assetId` 不变；
 5. 写入不改变图像像素（解码后逐像素比较一致）；
 6. 对 MP4/MOV：写入后媒体数据逐字节不变，恰好一个 XMP 块位于文件末尾，不重新编码；
-7. 链接规范化通过 `test-vectors/urls.json` 全部用例；
+7. 链接规范化通过 `test-vectors/urls.json` 及各版本新增的 URL 向量文件（本版本为 `test-vectors/urls-0.1.8.json`）全部用例；
 8. 存在 AI 标注时能正确解析并映射 `digitalSourceType`；对文件中已有 `DigitalSourceType` 的输入，写入时绝不覆盖。
