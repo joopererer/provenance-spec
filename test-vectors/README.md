@@ -24,6 +24,7 @@
 - `mp4-ai-label.mp4`：MP4 视频，顶层 XMP uuid box 含作者声明 AI 标注（prov:aiLabel 与 prov:aiLabelSource=author），并映射 Iptc4xmpExt:DigitalSourceType（compositeWithTrainedAlgorithmicMedia）
 - `urls.json`：链接规范化用例
 - `urls-0.1.8.json`：0.1.8 链接规范化用例，覆盖 rednote 两个域名的三种路径、非法 noteId、原样 `originalUrl` 与重复 query 参数
+- `urls-0.1.9.json`：0.1.9 链接规范化用例，覆盖抖音（Douyin）各域名与路径组合、modal_id、图文与视频同 ID 统一规范化、非法 ID 及 query 去除与保留
 
 每个 `*.expected.json` 是按 SPEC 第 7 节 JSON 表示读出的期望结果（省略缺失字段）。
 

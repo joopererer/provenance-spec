@@ -1,6 +1,6 @@
 # Provenance Metadata Spec（溯源元数据规范）
 
-- 版本：**0.1.8（草案）**
+- 版本：**0.1.9（草案）**
 - 状态：可实现；0.x 期间允许调整，1.0 起冻结已有字段语义
 - 适用项目：EasySave、File Organizer、OnlineAlbumPlugin、Tessera-system，以及任何希望读写本规范的软件
 
@@ -87,6 +87,7 @@
 | `instagram` | Instagram | shortcode（如 `Ddl1WWnGyCN`） | 必填（规范化 `/p/` 链接） | 多图使用 `itemIndex` |
 | `x` | X (Twitter) | tweetId（纯数字推文 ID） | 必填（规范化 `/i/status/` 链接） | 多图使用 `itemIndex` |
 | `tiktok` | TikTok | 帖子数字 ID（视频 ID / 图集 ID） | 必填（规范化 `/@/video/{id}` 链接） | 图集使用 `itemIndex`；`authorId` 仅使用作者数字 ID（`author.id`），不得使用用户名 |
+| `douyin` | 抖音 | 帖子数字 ID（awemeId，纯数字 15–20 位） | 必填（规范化 `https://www.douyin.com/video/{awemeId}` 链接） | 与 `tiktok` 区分，二者账号与内容不互通；图文帖同样使用 `/video/`；`authorId` 优先使用作者 `sec_uid`（见下文说明） |
 | `youtube` | YouTube | 视频 ID | 必填（规范化链接） | 待支持 |
 | `gdrive` | Google Drive | `fileId`（Drive API 资源 ID） | `https://drive.google.com/file/d/{fileId}/view` | 单文件来源省略 `itemIndex` |
 | `baidupan` | 百度网盘 | `fs_id`（64位无符号整数转字符串） | 省略（私有文件无稳定公开链接） | 网盘移动、重命名后 `fs_id` 保持不变；单文件来源省略 `itemIndex` |
@@ -236,6 +237,7 @@ XMP 是 RDF/XML，同一份数据有多种合法写法，不同软件写出的�
 | instagram | `https://www.instagram.com/p/{shortcode}/`（Reels 同样使用 `/p/`） |
 | x | `https://x.com/i/status/{tweetId}`（不含用户名，用户名会改） |
 | tiktok | `https://www.tiktok.com/@/video/{id}`（不含用户名；图集帖同样使用 `/video/`） |
+| douyin | `https://www.douyin.com/video/{awemeId}`（图文帖同样使用 `/video/`；不含 query） |
 | gdrive | `https://drive.google.com/file/d/{fileId}/view` |
 | baidupan | 省略（私有文件无稳定公开链接） |
 | onedrive | 省略（私有文件无稳定公开链接） |
@@ -246,7 +248,7 @@ XMP 是 RDF/XML，同一份数据有多种合法写法，不同软件写出的�
 - **查询参数保留**：
   - 对需要保留 query 的场景（包括 `originalUrl`，以及本规范中保留 query 的平台规则），同名参数必须全部保留，保持原有出现顺序和原有编码；不得合并、去重或重新排序。
   - 如果某个平台规则明确规定了排序，则该平台规则优先于上述顺序要求。
-  - 当前受影响的现有规则是 `web`：去除列出的跟踪参数后，其余 query 参数（包括重复参数、空值和编码）原样保留。`instagram`、`x`、`tiktok`、`gdrive` 及小红书的固定格式均不保留 query，因此不受重复参数规则影响。
+  - 当前受影响的现有规则是 `web`：去除列出的跟踪参数后，其余 query 参数（包括重复参数、空值和编码）原样保留。`instagram`、`x`、`tiktok`、`douyin`、`gdrive` 及小红书的固定格式均不保留 query，因此不受重复参数规则影响。
 - **xiaohongshu**：
   - 适用域名为 `xiaohongshu.com`、`www.xiaohongshu.com`、`rednote.com`、`www.rednote.com`，适用路径为 `/explore/{noteId}`、`/discovery/item/{noteId}`、`/user/profile/{userId}/{noteId}`。
   - `noteId` 必须匹配 `[0-9a-f]{24}`（恰好 24 个 ASCII 小写十六进制字符）；不匹配时不得按本规则规范化。
@@ -259,6 +261,19 @@ XMP 是 RDF/XML，同一份数据有多种合法写法，不同软件写出的�
   - 统一规范化为 `https://www.tiktok.com/@/video/{id}`。图集帖也使用 `/video/`，因为 `/photo/` 页面不包含帖子数据，而 `/@/video/{id}` 是 TikTok 服务端跳转时使用的标准形式；
   - `vm.tiktok.com`、`vt.tiktok.com` 短链需要先跟随跳转得到完整链接后再规范化（规范只定义完整链接的规范化，短链展开由实现方负责）；
   - 去除所有查询参数。
+- **douyin**：
+  - 平台标识为 `douyin`（与 `tiktok` 严格区分；抖音与 TikTok 是完全不同的产品，账号体系和内容数据互不互通）。
+  - 适用域名与路径形式：
+    - `www.douyin.com` 与 `douyin.com` 的 `/video/{id}`、`/note/{id}`
+    - `www.iesdouyin.com` 与 `iesdouyin.com` 的 `/share/video/{id}`、`/share/note/{id}`
+    - `www.douyin.com` 任意路径带 query 参数 `modal_id={id}` 时（例如 `/user/...` 或 `/discover?modal_id=` 等）
+  - 帖子 ID（`awemeId`）：必须为 15–20 位纯数字。不匹配时不得按本规则规范化。
+  - 统一规范化为 canonical URL `https://www.douyin.com/video/{awemeId}`，`sourceId` 为 `{awemeId}`。图文帖（note）同样使用 `/video/` 形式（与 TikTok 图文帖的处理规则一致），避免同一帖子因类型不同而产生两个 canonical URL。
+  - canonical URL 不包含任何 query 参数；`originalUrl` 必须保留用户输入的原始 URL（包括域名、路径、query 参数等原样保留）。
+  - 短链 `v.douyin.com` 不在规范化阶段展开，由实现方展开得到最终链接后再按本规则规范化。
+  - 作者标识 `authorId`：优先使用作者的 `sec_uid`（抖音 Web 端个人主页 URL `https://www.douyin.com/user/{sec_uid}` 中使用的稳定公开安全标识）；如实现方只能获取到数字 `uid`，记录为 `uid`，但优先推荐 `sec_uid`。
+    - **两类标识区别与选择理由**：`sec_uid` 是公开 Web 环境下长期稳定的对外安全标识，可直接拼装主页 URL 供人工溯源核验且具备抗遍历安全性；数字 `uid` 是系统内部自增 ID，纯网页端不易直接获取与访问。因此优先采用 `sec_uid`。
+  - AI 标签处理：沿用 v0.1.6 的字段定义与标准映射（`prov:aiLabel`、`prov:aiLabelSource`、`Iptc4xmpExt:DigitalSourceType`）。当平台页面/接口带有平台识别标签时，`prov:aiLabelSource = platform`；当属于作者声明时，`prov:aiLabelSource = author`。具体字段映射由实现方根据实际数据确定，本规范只规定其语义。
 
 ---
 
@@ -357,5 +372,5 @@ ISO 8601，**必须带时区**：`2026-10-20T15:30:00+02:00` 或 `2026-10-20T13:
 4. 已有 `assetId` 的文件写入后 `assetId` 不变；
 5. 写入不改变图像像素（解码后逐像素比较一致）；
 6. 对 MP4/MOV：写入后媒体数据逐字节不变，恰好一个 XMP 块位于文件末尾，不重新编码；
-7. 链接规范化通过 `test-vectors/urls.json` 及各版本新增的 URL 向量文件（本版本为 `test-vectors/urls-0.1.8.json`）全部用例；
+7. 链接规范化通过 `test-vectors/urls.json` 及各版本新增的 URL 向量文件（本版本为 `test-vectors/urls-0.1.9.json`）全部用例；
 8. 存在 AI 标注时能正确解析并映射 `digitalSourceType`；对文件中已有 `DigitalSourceType` 的输入，写入时绝不覆盖。

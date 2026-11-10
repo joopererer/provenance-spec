@@ -1,5 +1,27 @@
 # 变更记录
 
+## 0.1.9（草案）— 2026-11-10
+
+- 抖音平台规范化支持（§3.5, §5）：
+  - 平台标识：`platform` 为 `"douyin"`（与 `"tiktok"` 区分；抖音与 TikTok 是不同的产品，账号和内容不互通）。
+  - 帖子 ID（`awemeId`）：纯数字，15–20 位；不匹配时不规范化。
+  - 链接规范化（§5）：
+    - `www.douyin.com` 与 `douyin.com` 的 `/video/{id}`、`/note/{id}`；
+    - `www.iesdouyin.com` 与 `iesdouyin.com` 的 `/share/video/{id}`、`/share/note/{id}`；
+    - `www.douyin.com` 任意路径带 query 参数 `modal_id={id}`（例如 `/user/...` 或 `/discover?modal_id=`）；
+    - 统一规范化为 canonical URL `https://www.douyin.com/video/{awemeId}`，`sourceId` 为 `{awemeId}`；图文帖（note）同样使用 `/video/` 形式（与 TikTok 图文帖的规则一致），避免同一帖子因类型不同而产生两个 canonical URL。
+  - 参数与短链（§5）：
+    - canonical URL 不包含 query 参数；`originalUrl` 保留用户输入原样；
+    - 短链 `v.douyin.com` 不在规范化阶段展开，由实现方展开后再按本规则规范化。
+  - 作者标识 `authorId`（§3.5, §5）：
+    - 优先使用作者的 `sec_uid`（抖音网页个人主页 URL 中使用的稳定安全标识）；
+    - 如实现方只能获取到数字 `uid`，记录为 `uid`，但优先推荐 `sec_uid`；规范写明两者区别及 `sec_uid` 便于 Web 溯源核验且具备抗遍历安全性的选择理由。
+  - AI 标签（§3.5, §5）：
+    - 沿用 v0.1.6 的字段定义与标准映射（`prov:aiLabel`、`prov:aiLabelSource`、`Iptc4xmpExt:DigitalSourceType`）；
+    - 平台标注映射为 `aiLabelSource = platform`；作者声明映射为 `aiLabelSource = author`；具体字段映射由实现方根据实际数据确定，规范只规定语义。
+- 测试向量：
+  - 新增 `test-vectors/urls-0.1.9.json`，覆盖抖音多域名与路径形式、带 `modal_id` 链接、video 与 note 同 ID 规范化一致性、非法 ID（非纯数字、长度不符）不规范化、以及带额外 query 时 canonical 去除 query 且 `originalUrl` 保留。
+
 ## 0.1.8（草案）— 2026-11-07
 
 - 小红书链接规范化（§5）：

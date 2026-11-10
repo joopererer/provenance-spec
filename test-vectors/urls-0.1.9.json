@@ -1,0 +1,135 @@
+{
+  "note": "0.1.9 新增抖音（Douyin）链接规范化向量。短链 v.douyin.com 不在规范化阶段展开，由实现方展开后再规范化；所有 FAKE 值均为虚构。",
+  "cases": [
+    {
+      "in": "https://www.douyin.com/video/7699153835108994354",
+      "out": "https://www.douyin.com/video/7699153835108994354",
+      "platform": "douyin",
+      "id": "7699153835108994354"
+    },
+    {
+      "in": "https://www.douyin.com/note/7699153835108994354",
+      "out": "https://www.douyin.com/video/7699153835108994354",
+      "platform": "douyin",
+      "id": "7699153835108994354"
+    },
+    {
+      "in": "https://douyin.com/video/7699153835108994354",
+      "out": "https://www.douyin.com/video/7699153835108994354",
+      "platform": "douyin",
+      "id": "7699153835108994354"
+    },
+    {
+      "in": "https://douyin.com/note/7699153835108994354",
+      "out": "https://www.douyin.com/video/7699153835108994354",
+      "platform": "douyin",
+      "id": "7699153835108994354"
+    },
+    {
+      "in": "https://www.iesdouyin.com/share/video/7702383321586931814",
+      "out": "https://www.douyin.com/video/7702383321586931814",
+      "platform": "douyin",
+      "id": "7702383321586931814"
+    },
+    {
+      "in": "https://www.iesdouyin.com/share/note/7702383321586931814",
+      "out": "https://www.douyin.com/video/7702383321586931814",
+      "platform": "douyin",
+      "id": "7702383321586931814"
+    },
+    {
+      "in": "https://iesdouyin.com/share/video/7702383321586931814",
+      "out": "https://www.douyin.com/video/7702383321586931814",
+      "platform": "douyin",
+      "id": "7702383321586931814"
+    },
+    {
+      "in": "https://iesdouyin.com/share/note/7702383321586931814",
+      "out": "https://www.douyin.com/video/7702383321586931814",
+      "platform": "douyin",
+      "id": "7702383321586931814"
+    },
+    {
+      "in": "https://www.douyin.com/user/MS4wLjABAAAAfake_user_sec_uid?modal_id=7699153835108994354",
+      "out": "https://www.douyin.com/video/7699153835108994354",
+      "originalUrl": "https://www.douyin.com/user/MS4wLjABAAAAfake_user_sec_uid?modal_id=7699153835108994354",
+      "platform": "douyin",
+      "id": "7699153835108994354"
+    },
+    {
+      "in": "https://www.douyin.com/discover?modal_id=7702383321586931814",
+      "out": "https://www.douyin.com/video/7702383321586931814",
+      "originalUrl": "https://www.douyin.com/discover?modal_id=7702383321586931814",
+      "platform": "douyin",
+      "id": "7702383321586931814"
+    },
+    {
+      "in": "https://www.douyin.com/video/7699153835108994354?previous_page=app_code&params_url=fake",
+      "out": "https://www.douyin.com/video/7699153835108994354",
+      "originalUrl": "https://www.douyin.com/video/7699153835108994354?previous_page=app_code&params_url=fake",
+      "platform": "douyin",
+      "id": "7699153835108994354"
+    },
+    {
+      "in": "https://www.iesdouyin.com/share/video/7702383321586931814/?region=CN&mid=770238332&u_code=fake&did=MS4wLjABAAAA",
+      "out": "https://www.douyin.com/video/7702383321586931814",
+      "originalUrl": "https://www.iesdouyin.com/share/video/7702383321586931814/?region=CN&mid=770238332&u_code=fake&did=MS4wLjABAAAA",
+      "platform": "douyin",
+      "id": "7702383321586931814"
+    },
+    {
+      "in": "https://www.douyin.com/user/MS4wLjABAAAAfake_user_sec_uid?modal_id=7699153835108994354&showTab=record",
+      "out": "https://www.douyin.com/video/7699153835108994354",
+      "originalUrl": "https://www.douyin.com/user/MS4wLjABAAAAfake_user_sec_uid?modal_id=7699153835108994354&showTab=record",
+      "platform": "douyin",
+      "id": "7699153835108994354"
+    },
+    {
+      "in": "https://www.douyin.com/video/123456789012345",
+      "out": "https://www.douyin.com/video/123456789012345",
+      "platform": "douyin",
+      "id": "123456789012345"
+    },
+    {
+      "in": "https://www.douyin.com/video/12345678901234567890",
+      "out": "https://www.douyin.com/video/12345678901234567890",
+      "platform": "douyin",
+      "id": "12345678901234567890"
+    },
+    {
+      "in": "https://www.douyin.com/video/769915383510899435a",
+      "out": "https://www.douyin.com/video/769915383510899435a",
+      "normalized": false,
+      "platform": null,
+      "id": null
+    },
+    {
+      "in": "https://www.douyin.com/video/76991538351089",
+      "out": "https://www.douyin.com/video/76991538351089",
+      "normalized": false,
+      "platform": null,
+      "id": null
+    },
+    {
+      "in": "https://www.douyin.com/video/769915383510899435401",
+      "out": "https://www.douyin.com/video/769915383510899435401",
+      "normalized": false,
+      "platform": null,
+      "id": null
+    },
+    {
+      "in": "https://www.douyin.com/discover?modal_id=invalid_id",
+      "out": "https://www.douyin.com/discover?modal_id=invalid_id",
+      "normalized": false,
+      "platform": null,
+      "id": null
+    },
+    {
+      "in": "https://www.douyin.com/discover?modal_id=1234567890",
+      "out": "https://www.douyin.com/discover?modal_id=1234567890",
+      "normalized": false,
+      "platform": null,
+      "id": null
+    }
+  ]
+}
